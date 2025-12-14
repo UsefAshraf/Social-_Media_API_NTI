@@ -1,0 +1,971 @@
+{
+  "info": {
+    "name": "Social Media API - v1",
+    "_postman_id": "social-media-api-v1",
+    "description": "Complete API collection for Social Media API v1 with authentication, user management, and post features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.data.accessToken);",
+                  "    pm.environment.set('refreshToken', response.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Login with email and password. Automatically saves access and refresh tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            },
+            "description": "Get a new access token using refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            },
+            "description": "Logout current user (clears refresh token)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "reset"]
+            },
+            "description": "Request password reset email"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints for user registration, login, token refresh, and logout"
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "profile"]
+            },
+            "description": "Get the profile of the currently authenticated user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "",
+                  "description": "User ID to fetch"
+                }
+              ]
+            },
+            "description": "Get a specific user's profile by their ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johndoe_updated\",\n  \"avatar\": \"https://example.com/avatar.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "profile"]
+            },
+            "description": "Update current user's profile (username, email, or avatar)"
+          },
+          "response": []
+        }
+      ],
+      "description": "User management endpoints"
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is my first post! #excited\",\n  \"image\": \"https://example.com/image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts"]
+            },
+            "description": "Create a new post with optional image"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Get all posts with pagination (sorted by newest first)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Post",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts/:postId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts", ":postId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to fetch"
+                }
+              ]
+            },
+            "description": "Get a specific post by ID with author and comments populated"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated post content\",\n  \"image\": \"https://example.com/new-image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts/:postId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts", ":postId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to update"
+                }
+              ]
+            },
+            "description": "Update your own post (only post author can update)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts/:postId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts", ":postId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to delete"
+                }
+              ]
+            },
+            "description": "Delete your own post (only post author can delete)"
+          },
+          "response": []
+        },
+        {
+          "name": "Like/Unlike Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts/:postId/like",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts", ":postId", "like"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to like/unlike"
+                }
+              ]
+            },
+            "description": "Toggle like on a post (like if not liked, unlike if already liked)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great post! Thanks for sharing.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts/:postId/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts", ":postId", "comments"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to comment on"
+                }
+              ]
+            },
+            "description": "Add a comment to a post"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/posts/:postId/comments/:commentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "posts", ":postId", "comments", ":commentId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID"
+                },
+                {
+                  "key": "commentId",
+                  "value": "",
+                  "description": "Comment ID to delete"
+                }
+              ]
+            },
+            "description": "Delete your own comment (only comment author can delete)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Post management endpoints including CRUD operations, likes, and comments"
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the server is running"
+      },
+      "response": []
+    },
+    {
+      "name": "V2 - Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "register"]
+            },
+            "description": "Register a new user account (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.data.accessToken);",
+                  "    pm.environment.set('refreshToken', response.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "login"]
+            },
+            "description": "Login with email and password (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('accessToken', response.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "refresh"]
+            },
+            "description": "Get a new access token using refresh token (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "logout"]
+            },
+            "description": "Logout current user (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/auth/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "auth", "reset"]
+            },
+            "description": "Request password reset email (V2)"
+          },
+          "response": []
+        }
+      ],
+      "description": "V2 Authentication endpoints"
+    },
+    {
+      "name": "V2 - Users",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "users", "profile"]
+            },
+            "description": "Get the profile of the currently authenticated user (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "",
+                  "description": "User ID to fetch"
+                }
+              ]
+            },
+            "description": "Get a specific user's profile by their ID (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johndoe_updated\",\n  \"avatar\": \"https://example.com/avatar.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "users", "profile"]
+            },
+            "description": "Update current user's profile (V2)"
+          },
+          "response": []
+        }
+      ],
+      "description": "V2 User management endpoints"
+    },
+    {
+      "name": "V2 - Posts",
+      "item": [
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is my first post! #excited\",\n  \"image\": \"https://example.com/image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts"]
+            },
+            "description": "Create a new post (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Get all posts with pagination (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Post",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts/:postId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts", ":postId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to fetch"
+                }
+              ]
+            },
+            "description": "Get a specific post by ID (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated post content\",\n  \"image\": \"https://example.com/new-image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts/:postId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts", ":postId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to update"
+                }
+              ]
+            },
+            "description": "Update your own post (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts/:postId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts", ":postId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to delete"
+                }
+              ]
+            },
+            "description": "Delete your own post (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Like/Unlike Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts/:postId/like",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts", ":postId", "like"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to like/unlike"
+                }
+              ]
+            },
+            "description": "Toggle like on a post (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great post! Thanks for sharing.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts/:postId/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts", ":postId", "comments"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID to comment on"
+                }
+              ]
+            },
+            "description": "Add a comment to a post (V2)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v2/posts/:postId/comments/:commentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v2", "posts", ":postId", "comments", ":commentId"],
+              "variable": [
+                {
+                  "key": "postId",
+                  "value": "",
+                  "description": "Post ID"
+                },
+                {
+                  "key": "commentId",
+                  "value": "",
+                  "description": "Comment ID to delete"
+                }
+              ]
+            },
+            "description": "Delete your own comment (V2)"
+          },
+          "response": []
+        }
+      ],
+      "description": "V2 Post management endpoints"
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
