@@ -1165,7 +1165,7 @@ Contributions, issues, and feature requests are welcome!
 
 ## 📞 Support
 
-For support, email your-email@example.com or open an issue in the repository.
+For support, email yousashrafef1247@example.com or open an issue in the repository.
 
 ---
 
