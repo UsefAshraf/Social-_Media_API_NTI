@@ -42,9 +42,11 @@ exports.deleteNotification = async (notificationId) => {
 exports.markNotificationAsRead = async (notificationId,sender) => {
     try {
         const notification = await Notification.findById(notificationId);
+        if (!notification) {
+            throw new Error("Notification not found");
+        }
         if(notification.recipient.toString() !== sender){
-            console.log("Unauthorized");
-            // throw new Error("Unauthorized");
+            throw new Error("Unauthorized");
         }
         console.log("Notification marked as read");
         

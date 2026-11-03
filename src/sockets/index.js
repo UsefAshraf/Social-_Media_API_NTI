@@ -54,7 +54,7 @@ const initializeSocketIO = (server) => {
     const onlineUsers = new Set();
     const io = socketIO(server, {
         cors: {
-            origin: process.env.ALLOWED_ORIGINS || "*",
+            origin: process.env.ALLOWED_ORIGINS?.split(",") || "http://localhost:3000",
             methods: ["GET", "POST"],
             credentials: true,
         },

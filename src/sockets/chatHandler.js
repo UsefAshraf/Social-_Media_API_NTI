@@ -18,10 +18,9 @@ const chatHandler = (io,socket) => {
     // send message
     socket.on("chat:message", async(data) => {
         try{
-            socket.emit("chat:message", { message:data })
             const { receiverId,content } = data;
             if(!receiverId || !content){
-                throw socket.emit("chat:error", { message:"Invalid data nothinggggggg" })
+                return socket.emit("chat:error", { message:"receiverId and content are required" })
             }
             //create room
             const room = await createRoom(socket.userId, receiverId);
@@ -52,8 +51,9 @@ const chatHandler = (io,socket) => {
     // leave
     socket.on("chat:leave", async(data) => {
         try{
-            socket.leave(data.userId.toString())
-            console.log(`User ${socket.userId} left room ${data.userId}`);
+            const room = await createRoom(socket.userId, data.userId)
+            socket.leave(room)
+            console.log(`User ${socket.userId} left room ${room}`);
         }catch(error){
             console.log(error)
             socket.emit("chat:error", { message:"Failed to leave room",error })
