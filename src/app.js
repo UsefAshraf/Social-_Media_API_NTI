@@ -20,6 +20,8 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 const server = http.createServer(app);
 
 const io = initializeSocketIO(server);
+// lets controllers push real-time events via req.app.get("io")
+app.set("io", io);
 
 app.use(
   cors({

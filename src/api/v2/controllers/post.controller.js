@@ -3,6 +3,7 @@ const User = require('../../../shared/models/User');
 const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
+const { notify } = require('../services/notification.service');
 
 const createPost = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -170,13 +171,25 @@ const likePost = asyncHandler(async (req, res) => {
 
   const likeIndex = post.likes.indexOf(req.user._id);
 
-  if (likeIndex === -1) {
+  const liked = likeIndex === -1;
+  if (liked) {
     post.likes.push(req.user._id);
   } else {
     post.likes.splice(likeIndex, 1);
   }
 
   await post.save();
+
+  if (liked) {
+    await notify(req.app.get('io'), {
+      recipient: post.author,
+      sender: req.user._id,
+      type: 'like',
+      content: `${req.user.username} liked your post`,
+      link: `/posts/${post._id}`,
+      relatedId: post._id,
+    });
+  }
   await post.populate('author', 'username avatar');
 
   res.status(200).json({
@@ -200,6 +213,16 @@ const addComment = asyncHandler(async (req, res) => {
   });
 
   await post.save();
+
+  await notify(req.app.get('io'), {
+    recipient: post.author,
+    sender: req.user._id,
+    type: 'comment',
+    content: `${req.user.username} commented: ${content.slice(0, 100)}`,
+    link: `/posts/${post._id}`,
+    relatedId: post._id,
+  });
+
   await post.populate('author', 'username avatar');
   await post.populate('comments.author', 'username avatar');
 
