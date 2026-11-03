@@ -9,7 +9,7 @@ const v1Routes = require("./api/v1");
 const v2Routes = require("./api/v2");
 const connectDB = require("./shared/config/db");
 const multer = require("multer");
-const { fileStorage, fileFilter } = require("./shared/config/multerConfig");
+const { fileStorage, fileFilter, limits } = require("./shared/config/multerConfig");
 const path = require("path");
 const http = require("http");
 const app = express();
@@ -30,7 +30,7 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
-app.use(multer({ storage: fileStorage, fileFilter }).single("image"));
+app.use(multer({ storage: fileStorage, fileFilter, limits }).single("image"));
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 app.use(mongoSanitize());
 

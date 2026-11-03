@@ -1,4 +1,6 @@
 const multer = require("multer")
+const crypto = require("crypto")
+const ApiError = require("../utils/ApiError")
 const fs = require("fs")
 const path = require("path")
 
@@ -11,7 +13,9 @@ const fileStorage = multer.diskStorage({
         cb(null, uploadDir)
     },
     filename: (req, file, cb) => {
-        const filename = `${Date.now()}-${file.originalname}`
+        // never trust the client filename; keep only a known extension
+        const ext = path.extname(file.originalname).toLowerCase().replace(/[^.a-z]/g, "")
+        const filename = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`
         cb(null, filename)
     }
 })
@@ -21,11 +25,17 @@ const fileFilter = (req, file, cb) => {
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true)
     } else {
-        cb(new Error("Only image file allowed"), false)
+        cb(new ApiError(400, "Only JPEG and PNG images are allowed"), false)
     }
 }
 
+const limits = {
+    fileSize: 5 * 1024 * 1024 // 5MB
+}
+
 module.exports = {
+    uploadDir,
     fileStorage,
-    fileFilter
+    fileFilter,
+    limits
 }

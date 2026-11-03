@@ -23,6 +23,12 @@ const errorHandler = (err, req, res, next) => {
     error = new ApiError(400, message);
   }
 
+  if (err.name === 'MulterError') {
+    const message =
+      err.code === 'LIMIT_FILE_SIZE' ? 'Image must be 5MB or smaller' : err.message;
+    error = new ApiError(400, message);
+  }
+
   if (err.name === 'JsonWebTokenError') {
     const message = 'Invalid token';
     error = new ApiError(401, message);
