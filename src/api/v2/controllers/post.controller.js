@@ -2,9 +2,11 @@ const Post = require('../../../shared/models/Post');
 const User = require('../../../shared/models/User');
 const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
+const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 
 const createPost = asyncHandler(async (req, res) => {
-  const { content, image } = req.body;
+  const { content } = req.body;
+  const image = fileUrl(req.file) || req.body.image;
 
   const post = await Post.create({
     content,
@@ -121,10 +123,14 @@ const updatePost = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Not authorized to update this post');
   }
 
-  const { content, image } = req.body;
+  const { content } = req.body;
+  const image = fileUrl(req.file) ?? req.body.image;
 
   if (content) post.content = content;
-  if (image !== undefined) post.image = image;
+  if (image !== undefined && image !== post.image) {
+    await removeUpload(post.image);
+    post.image = image;
+  }
 
   await post.save();
   await post.populate('author', 'username avatar');
@@ -147,6 +153,7 @@ const deletePost = asyncHandler(async (req, res) => {
   }
 
   await post.deleteOne();
+  await removeUpload(post.image);
 
   res.status(200).json({
     success: true,
