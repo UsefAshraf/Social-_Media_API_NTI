@@ -16,20 +16,9 @@ exports.createMessage = async (senderId, receiverId, content, room) => {
     }
 }
 
-// exports.createRoom = async (userId1, userId2) => {
-//     try {
-//         return [userId1, userId2].sort().join("_")
-//     } catch (error) {
-//         throw error
-//     }
-// }
-
-exports.createRoom = async (userId1, userId2) => { // <-- Marked as async
-    try {
-        return [userId1, userId2].sort().join("_") // <-- Returns a String wrapped in a Promise
-    } catch (error) {
-        throw error
-    }
+// Deterministic room id for a pair of users, regardless of order
+exports.createRoom = async (userId1, userId2) => {
+    return [userId1.toString(), userId2.toString()].sort().join("_")
 }
 // Newest-first page of a room; pass the oldest createdAt you have as `before` to load older messages
 exports.getMessages = async (room, { before, limit = 30 } = {}) => {
