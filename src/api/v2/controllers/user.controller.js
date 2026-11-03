@@ -76,8 +76,30 @@ const unfollowUser = asyncHandler(async (req, res) => {
   });
 });
 
+const listConnections = (field) =>
+  asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id)
+      .select(field)
+      .populate(field, "username avatar");
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    res.status(200).json({
+      success: true,
+      count: user[field].length,
+      data: user[field],
+    });
+  });
+
+const getFollowers = listConnections("followers");
+const getFollowing = listConnections("following");
+
 module.exports = {
   getProfile,
+  getFollowers,
+  getFollowing,
   updateProfile,
   followUser,
   unfollowUser,
