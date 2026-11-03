@@ -13,6 +13,8 @@ const path = require("path");
 const http = require("http");
 const app = express();
 const initializeSocketIO = require("./sockets/index");
+const swaggerUi = require("swagger-ui-express");
+const openApiSpec = require("./docs/openapi");
 
 // allow frontends on other origins to load /uploads images
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
@@ -39,6 +41,9 @@ app.use(mongoSanitize());
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running" });
 });
+
+app.get("/api-docs.json", (req, res) => res.json(openApiSpec));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 app.use("/api/v2", v2Routes);
 
