@@ -66,9 +66,10 @@ exports.getConversations = async (userId) => {
         { $sort: { "lastMessage.createdAt": -1 } },
     ])
 
-    await Message.populate(conversations, [
-        { path: "lastMessage.sender", select: "username avatar", model: "User" },
-        { path: "lastMessage.receiver", select: "username avatar", model: "User" },
+    // populate the raw message docs, which match the Message schema
+    await Message.populate(conversations.map((c) => c.lastMessage), [
+        { path: "sender", select: "username avatar" },
+        { path: "receiver", select: "username avatar" },
     ])
 
     return conversations.map(({ _id, lastMessage, unreadCount }) => ({
