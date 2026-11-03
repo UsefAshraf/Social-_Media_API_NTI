@@ -1,6 +1,10 @@
 const ApiError = require('../utils/ApiError');
+const { fileUrl, removeUpload } = require('../utils/files');
 
 const errorHandler = (err, req, res, next) => {
+  // a failed request should not leave its uploaded file behind
+  if (req.file) removeUpload(fileUrl(req.file));
+
   let error = { ...err };
   error.message = err.message;
   error.statusCode = err.statusCode || 500;
@@ -20,6 +24,12 @@ const errorHandler = (err, req, res, next) => {
     const message = Object.values(err.errors)
       .map((val) => val.message)
       .join(', ');
+    error = new ApiError(400, message);
+  }
+
+  if (err.name === 'MulterError') {
+    const message =
+      err.code === 'LIMIT_FILE_SIZE' ? 'Image must be 5MB or smaller' : err.message;
     error = new ApiError(400, message);
   }
 
