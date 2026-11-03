@@ -143,18 +143,15 @@ MONGODB_URI=mongodb://localhost:27017/social-media-api
 # JWT Secrets
 JWT_ACCESS_SECRET=your_access_token_secret_here
 JWT_REFRESH_SECRET=your_refresh_token_secret_here
-JWT_ACCESS_EXPIRATION=15m
-JWT_REFRESH_EXPIRATION=7d
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
 
 # CORS
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Email Configuration (for password reset)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=noreply@yourdomain.com
+EMAIL=your-email@gmail.com
+PASSWORD=your-gmail-app-password
 
 # Frontend URL (for email links)
 FRONTEND_URL=http://localhost:3000
