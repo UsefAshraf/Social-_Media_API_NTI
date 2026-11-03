@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+.env
+.git
+.github
+coverage
+uploads
+tests
+*.md
+Social-Media-API.postman_*.json
