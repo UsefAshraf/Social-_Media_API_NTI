@@ -22,8 +22,10 @@ beforeAll((done) => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
   sockets.splice(0).forEach((s) => s.close());
+  // let the server finish its disconnect handlers (presence writes)
+  await new Promise((r) => setTimeout(r, 200));
 });
 
 afterAll((done) => {
