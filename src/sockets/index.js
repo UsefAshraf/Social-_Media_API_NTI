@@ -85,7 +85,7 @@ const initializeSocketIO = (server) => {
 
         // Call chat handler
         chatHandler(io, socket);
-        notificationHandler(io, socket,onlineUsers);
+        notificationHandler(io, socket);
 
         socket.on("disconnect", () => {
             onlineUsers.delete(socket.userId.toString());
