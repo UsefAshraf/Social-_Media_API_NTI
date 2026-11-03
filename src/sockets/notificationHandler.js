@@ -54,7 +54,7 @@ exports.notificationHandler = async (io, socket, onlineUsers) => {
         userId
       );
       socket.emit("notification:markAsRead", notification);
-    } catch {
+    } catch (error) {
       console.log(error);
       socket.emit("notification:error", {
         message: "Failed to mark notification as read",
@@ -65,12 +65,11 @@ exports.notificationHandler = async (io, socket, onlineUsers) => {
 
   socket.on("notification:markAllAsRead", async (data) => {
     try {
-      const { recipient } = data;
       const notification = await notificationService.markAllNotificationsAsRead(
-        recipient
+        socket.userId
       );
       socket.emit("notification:markAllAsRead", notification);
-    } catch {
+    } catch (error) {
       console.log(error);
       socket.emit("notification:error", {
         message: "Failed to mark all notifications as read",
