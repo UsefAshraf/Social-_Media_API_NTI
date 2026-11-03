@@ -326,6 +326,47 @@ paths['/messages/{userId}/read'] = {
   },
 };
 
+// --- Notifications
+paths['/notifications'] = {
+  get: {
+    tags: ['Notifications'],
+    summary: 'Your notifications, newest first',
+    security: bearer,
+    parameters: pageParams,
+    responses: {
+      200: ok('Page of notifications', {
+        type: 'object',
+        properties: {
+          data: { type: 'array', items: ref('Notification') },
+          unreadCount: { type: 'integer' },
+          pagination: ref('Pagination'),
+        },
+      }),
+    },
+  },
+};
+paths['/notifications/read-all'] = {
+  patch: { tags: ['Notifications'], summary: 'Mark all as read', security: bearer, responses: { 200: ok('Count updated') } },
+};
+paths['/notifications/{id}/read'] = {
+  patch: {
+    tags: ['Notifications'],
+    summary: 'Mark one as read',
+    security: bearer,
+    parameters: [idParam('id', 'Notification id')],
+    responses: { 200: ok('Updated', { type: 'object', properties: { data: ref('Notification') } }), 404: errors[404] },
+  },
+};
+paths['/notifications/{id}'] = {
+  delete: {
+    tags: ['Notifications'],
+    summary: 'Delete one',
+    security: bearer,
+    parameters: [idParam('id', 'Notification id')],
+    responses: { 200: ok('Deleted'), 404: errors[404] },
+  },
+};
+
 module.exports = {
   openapi: '3.0.3',
   info: {
