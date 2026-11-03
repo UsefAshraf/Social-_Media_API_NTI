@@ -1,4 +1,5 @@
 const Post = require('../../../shared/models/Post');
+const User = require('../../../shared/models/User');
 const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 
@@ -30,6 +31,57 @@ const getPosts = asyncHandler(async (req, res) => {
     .skip((page - 1) * limit);
 
   const total = await Post.countDocuments();
+
+  res.status(200).json({
+    success: true,
+    data: posts,
+    pagination: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  });
+});
+
+const getFeed = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const me = await User.findById(req.user._id).select("following");
+  const filter = { author: { $in: [...me.following, req.user._id] } };
+
+  const posts = await Post.find(filter)
+    .populate("author", "username avatar")
+    .populate("comments.author", "username avatar")
+    .sort({ createdAt: -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+  const total = await Post.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    data: posts,
+    pagination: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  });
+});
+
+const getUserPosts = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const filter = { author: req.params.userId };
+
+  const posts = await Post.find(filter)
+    .populate("author", "username avatar")
+    .sort({ createdAt: -1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
+
+  const total = await Post.countDocuments(filter);
 
   res.status(200).json({
     success: true,
@@ -181,6 +233,8 @@ const deleteComment = asyncHandler(async (req, res) => {
 module.exports = {
   createPost,
   getPosts,
+  getFeed,
+  getUserPosts,
   getPost,
   updatePost,
   deletePost,

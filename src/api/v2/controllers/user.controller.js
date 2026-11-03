@@ -40,7 +40,67 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
+const followUser = asyncHandler(async (req, res) => {
+  const targetId = req.params.id;
+
+  if (targetId === req.user._id.toString()) {
+    throw new ApiError(400, "You cannot follow yourself");
+  }
+
+  const target = await User.findById(targetId);
+  if (!target) {
+    throw new ApiError(404, "User not found");
+  }
+
+  await User.updateOne({ _id: req.user._id }, { $addToSet: { following: target._id } });
+  await User.updateOne({ _id: target._id }, { $addToSet: { followers: req.user._id } });
+
+  res.status(200).json({
+    success: true,
+    message: `You are now following ${target.username}`,
+  });
+});
+
+const unfollowUser = asyncHandler(async (req, res) => {
+  const target = await User.findById(req.params.id);
+  if (!target) {
+    throw new ApiError(404, "User not found");
+  }
+
+  await User.updateOne({ _id: req.user._id }, { $pull: { following: target._id } });
+  await User.updateOne({ _id: target._id }, { $pull: { followers: req.user._id } });
+
+  res.status(200).json({
+    success: true,
+    message: `You unfollowed ${target.username}`,
+  });
+});
+
+const listConnections = (field) =>
+  asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id)
+      .select(field)
+      .populate(field, "username avatar");
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    res.status(200).json({
+      success: true,
+      count: user[field].length,
+      data: user[field],
+    });
+  });
+
+const getFollowers = listConnections("followers");
+const getFollowing = listConnections("following");
+
 module.exports = {
   getProfile,
+  getFollowers,
+  getFollowing,
   updateProfile,
+  followUser,
+  unfollowUser,
 };
