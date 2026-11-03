@@ -1,69 +1,60 @@
 const Notification = require("../../../shared/models/Notification");
 
+const populateFields = [
+    { path: "sender", select: "username avatar" },
+    { path: "relatedId", select: "image content" },
+];
 
 exports.createNotification = async (notificationData) => {
+    const notification = await Notification.create(notificationData);
+    await notification.populate(populateFields);
+    return notification;
+}
+
+// Save a notification and push it live to the recipient's personal socket room.
+// Never throws: a failed notification must not fail the action that triggered it.
+exports.notify = async (io, { recipient, sender, type, content, link = null, relatedId = null }) => {
+    if (recipient.toString() === sender.toString()) return null;
+
     try {
-        console.log("notification created");
-        
-        const notification = await Notification.create(notificationData);
-        console.log(notification);
-        
-        await notification.populate([
-            { path: "sender", select: "username avatar email" },
-            { path: "recipient", select: "username avatar email" },
-            { path: "relatedId", select: "image content" },
-        ]);
-        console.log(notification);
-        
+        const notification = await exports.createNotification({ recipient, sender, type, content, link, relatedId });
+        if (io) io.to(recipient.toString()).emit("notification:new", notification);
         return notification;
     } catch (error) {
-        console.log(error);
-        throw error;
-    }
-}
-exports.getUserNotifications = async (recipient) => {
-    try {
-        const notifications = await Notification.find({ recipient }).sort({ createdAt: -1 });
-        return notifications;
-    } catch (error) {
-        console.log(error);
-        throw error;
-    }
-}
-exports.deleteNotification = async (notificationId) => {
-    try {
-        const notification = await Notification.findByIdAndDelete(notificationId);
-        return notification;
-    } catch (error) {
-        console.log(error);
-        throw error;
-    }
-}
-exports.markNotificationAsRead = async (notificationId,sender) => {
-    try {
-        const notification = await Notification.findById(notificationId);
-        if (!notification) {
-            throw new Error("Notification not found");
-        }
-        if(notification.recipient.toString() !== sender){
-            throw new Error("Unauthorized");
-        }
-        console.log("Notification marked as read");
-        
-        await notification.updateOne({ read: true });
-        return notification;
-    } catch (error) {
-        console.log(error);
-        throw error;
-    }
-}
-exports.markAllNotificationsAsRead = async (recipient) => {
-    try {
-        const notifications = await Notification.updateMany({ recipient }, { read: true });
-        return notifications;
-    } catch (error) {
-        console.log(error);
-        throw error;
+        console.error("Failed to create notification", error);
+        return null;
     }
 }
 
+exports.getUserNotifications = async (recipient, { page = 1, limit = 20 } = {}) => {
+    limit = Math.min(Number(limit) || 20, 100);
+    page = Math.max(Number(page) || 1, 1);
+
+    const [notifications, total, unreadCount] = await Promise.all([
+        Notification.find({ recipient })
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .populate(populateFields),
+        Notification.countDocuments({ recipient }),
+        Notification.countDocuments({ recipient, read: false }),
+    ]);
+
+    return { notifications, total, unreadCount, page, limit };
+}
+
+exports.deleteNotification = async (notificationId, recipient) => {
+    return Notification.findOneAndDelete({ _id: notificationId, recipient });
+}
+
+exports.markNotificationAsRead = async (notificationId, recipient) => {
+    return Notification.findOneAndUpdate(
+        { _id: notificationId, recipient },
+        { read: true },
+        { new: true }
+    );
+}
+
+exports.markAllNotificationsAsRead = async (recipient) => {
+    return Notification.updateMany({ recipient, read: false }, { read: true });
+}
