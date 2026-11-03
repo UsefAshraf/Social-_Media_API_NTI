@@ -1,82 +1,35 @@
 const notificationService = require("../api/v2/services/notification.service");
 
-exports.notificationHandler = async (io, socket, onlineUsers) => {
-  socket.on("notification:notify", async (data) => {
-    try {
-      const { recipient, type, content, link, relatedId } = data;
-      const senderId = socket.userId;
-
-      const isOnline = onlineUsers.has(recipient.toString());
-      console.log(`Recipient ${recipient} online status: ${isOnline}`);
-
-      const notificationData = {
-        recipient,
-        sender: senderId,
-        type,
-        content,
-        link,
-        relatedId,
-      };
-
-      let notification;
-
-      if (isOnline) {
-        console.log(
-          "Recipient is online. Saving to DB and emitting real-time."
-        );
-
-        notification = await notificationService.createNotification(
-          notificationData
-        );
-        io.to(recipient.toString()).emit("notification:new", notification);
-      } else {
-        console.log("Recipient is offline. Saving to DB only.");
-        notification = await notificationService.createNotification(
-          notificationData
-        );
-      }
-    } catch (error) {
-      console.log(error);
-      socket.emit("notification:error", {
-        message: "Failed to send notification",
-        error,
-      });
-    }
-  });
-
+// Notifications are created server-side (likes, comments, follows) and pushed
+// as "notification:new". Clients can only update their own notifications here.
+exports.notificationHandler = (io, socket) => {
   socket.on("notification:markAsRead", async (data) => {
     try {
-      const { notificationId } = data;
-      console.log(notificationId);
-      const userId = socket.userId;
       const notification = await notificationService.markNotificationAsRead(
-        notificationId,
-        userId
+        data?.notificationId,
+        socket.userId
       );
+      if (!notification) {
+        return socket.emit("notification:error", { message: "Notification not found" });
+      }
       socket.emit("notification:markAsRead", notification);
     } catch (error) {
       console.log(error);
       socket.emit("notification:error", {
         message: "Failed to mark notification as read",
-        error,
       });
     }
   });
 
-  socket.on("notification:markAllAsRead", async (data) => {
+  socket.on("notification:markAllAsRead", async () => {
     try {
-      const notification = await notificationService.markAllNotificationsAsRead(
-        socket.userId
-      );
-      socket.emit("notification:markAllAsRead", notification);
+      const result = await notificationService.markAllNotificationsAsRead(socket.userId);
+      socket.emit("notification:markAllAsRead", { updated: result.modifiedCount });
     } catch (error) {
       console.log(error);
       socket.emit("notification:error", {
         message: "Failed to mark all notifications as read",
-        error,
       });
     }
   });
 };
-
-//search how to use socket.io client in the frontend
