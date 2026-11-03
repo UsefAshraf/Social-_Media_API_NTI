@@ -11,6 +11,7 @@ const multer = require("multer");
 const { fileStorage, fileFilter, limits } = require("./shared/config/multerConfig");
 const path = require("path");
 const http = require("http");
+const mongoose = require("mongoose");
 const app = express();
 const initializeSocketIO = require("./sockets/index");
 const swaggerUi = require("swagger-ui-express");
@@ -76,8 +77,21 @@ const startServer = async () => {
   }
 };
 
+const shutdown = (signal) => {
+  console.log(`${signal} received, shutting down`);
+  io.close();
+  server.close(async () => {
+    await mongoose.connection.close();
+    process.exit(0);
+  });
+  // force exit if connections do not close in time
+  setTimeout(() => process.exit(1), 10000).unref();
+};
+
 if (require.main === module) {
   startServer();
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 module.exports = { app, server, io };
