@@ -4,6 +4,7 @@ const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 const { notify } = require('../services/notification.service');
+const { parsePagination, paginationMeta } = require('../../../shared/utils/pagination');
 
 const createPost = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -24,31 +25,26 @@ const createPost = asyncHandler(async (req, res) => {
 });
 
 const getPosts = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const paging = parsePagination(req.query);
 
   const posts = await Post.find()
     .populate('author', 'username avatar')
     .populate('comments.author', 'username avatar')
     .sort({ createdAt: -1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+    .skip(paging.skip)
+    .limit(paging.limit);
 
   const total = await Post.countDocuments();
 
   res.status(200).json({
     success: true,
     data: posts,
-    pagination: {
-      page: Number(page),
-      limit: Number(limit),
-      total,
-      pages: Math.ceil(total / limit),
-    },
+    pagination: paginationMeta(paging, total),
   });
 });
 
 const getFeed = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const paging = parsePagination(req.query);
 
   const me = await User.findById(req.user._id).select("following");
   const filter = { author: { $in: [...me.following, req.user._id] } };
@@ -57,44 +53,34 @@ const getFeed = asyncHandler(async (req, res) => {
     .populate("author", "username avatar")
     .populate("comments.author", "username avatar")
     .sort({ createdAt: -1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+    .skip(paging.skip)
+    .limit(paging.limit);
 
   const total = await Post.countDocuments(filter);
 
   res.status(200).json({
     success: true,
     data: posts,
-    pagination: {
-      page: Number(page),
-      limit: Number(limit),
-      total,
-      pages: Math.ceil(total / limit),
-    },
+    pagination: paginationMeta(paging, total),
   });
 });
 
 const getUserPosts = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const paging = parsePagination(req.query);
   const filter = { author: req.params.userId };
 
   const posts = await Post.find(filter)
     .populate("author", "username avatar")
     .sort({ createdAt: -1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+    .skip(paging.skip)
+    .limit(paging.limit);
 
   const total = await Post.countDocuments(filter);
 
   res.status(200).json({
     success: true,
     data: posts,
-    pagination: {
-      page: Number(page),
-      limit: Number(limit),
-      total,
-      pages: Math.ceil(total / limit),
-    },
+    pagination: paginationMeta(paging, total),
   });
 });
 
