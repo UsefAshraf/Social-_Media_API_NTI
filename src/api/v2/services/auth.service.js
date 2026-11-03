@@ -90,8 +90,6 @@ const refreshAccessToken = async (refreshToken) => {
     // // }
     const user = await User.findById(decoded.userId).select('+refreshToken');
 
-    console.log(user)
-
     if (!user || user.refreshToken !== refreshToken) {
       throw new ApiError(401, 'Invalid refresh token');
     }
@@ -107,24 +105,15 @@ const refreshAccessToken = async (refreshToken) => {
 };
 
 const resetPassword = async (email) => {
-  try {
-    // let { email } = req.body
-    let foundedUser = await User.findOne({ email })
-    if (!foundedUser) {
-      console.log("user not found")
-      throw Error("not found")
-    }
-    crypto.randomBytes(32, async (err, buffer) => {
-      const token = buffer.toString("hex");
-      foundedUser.resetToken = token
-      foundedUser.resetTokenExpiration = Date.now() + 18000000 //5 hours in miliseconds
-      let savedUser = await foundedUser.save()
-      await sendResetEmail(savedUser.email, savedUser.username, token)
-    })
+  let foundedUser = await User.findOne({ email })
+  // don't reveal whether the email exists
+  if (!foundedUser) return
 
-  } catch (error) {
-
-  }
+  const token = crypto.randomBytes(32).toString("hex")
+  foundedUser.resetToken = token
+  foundedUser.resetTokenExpiration = Date.now() + 18000000 //5 hours in miliseconds
+  let savedUser = await foundedUser.save()
+  await sendResetEmail(savedUser.email, savedUser.username, token)
 }
 
 const submitNewPassword = async (token, newPassword) => {
@@ -134,9 +123,6 @@ const submitNewPassword = async (token, newPassword) => {
     resetTokenExpiration: { $gt: Date.now() }
   })
 
-  // let date = Date.now()
-
-  console.log(date)
   if (!user) {
     throw new ApiError(400, 'Invalid or expired token');
   }
