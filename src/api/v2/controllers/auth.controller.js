@@ -1,4 +1,5 @@
 const asyncHandler = require('../../../shared/utils/asyncHandler');
+const ApiError = require('../../../shared/utils/ApiError');
 const authService = require('../services/auth.service');
 
 const register = asyncHandler(async (req, res) => {
@@ -30,15 +31,18 @@ const refresh = asyncHandler(async (req, res) => {
   });
 });
 
-const requestResetPassword = async (req, res) => {
-  let { email } = req.body
-  let result = await authService.resetPassword(email)
+const requestResetPassword = asyncHandler(async (req, res) => {
+  const email = req.query.email || req.body?.email
+  if (!email) {
+    throw new ApiError(400, 'Email is required')
+  }
+  await authService.resetPassword(email)
   res.status(200).json({
     success: true,
     // data: result
     message: "Please check your mail"
   })
-}
+})
 
 const submitNewPassword = async (req, res) => {
   try {
