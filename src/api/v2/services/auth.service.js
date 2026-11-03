@@ -8,6 +8,8 @@ const {
 } = require('../../../shared/utils/tokens');
 const { sendWelcomeEmail, sendResetEmail } = require('./email.service');
 
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex")
+
 const register = async (userData) => {
   const { username, email, password } = userData;
 
@@ -112,7 +114,7 @@ const resetPassword = async (email) => {
   if (!foundedUser) return
 
   const token = crypto.randomBytes(32).toString("hex")
-  foundedUser.resetToken = token
+  foundedUser.resetToken = hashToken(token)
   foundedUser.resetTokenExpiration = Date.now() + 18000000 //5 hours in miliseconds
   let savedUser = await foundedUser.save()
   await sendResetEmail(savedUser.email, savedUser.username, token)
@@ -121,7 +123,7 @@ const resetPassword = async (email) => {
 const submitNewPassword = async (token, newPassword) => {
 
   let user = await User.findOne({
-    resetToken: token,
+    resetToken: hashToken(String(token)),
     resetTokenExpiration: { $gt: Date.now() }
   })
 
