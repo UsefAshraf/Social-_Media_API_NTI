@@ -164,6 +164,108 @@ const connections = (summary) => ({
 paths['/users/{id}/followers'] = connections('Followers of a user');
 paths['/users/{id}/following'] = connections('Users this user follows');
 
+// --- Posts
+const postList = (summary, extraParams = []) => ({
+  get: {
+    tags: ['Posts'],
+    summary,
+    security: bearer,
+    parameters: [...extraParams, ...pageParams],
+    responses: {
+      200: ok('Page of posts', {
+        type: 'object',
+        properties: { data: { type: 'array', items: ref('Post') }, pagination: ref('Pagination') },
+      }),
+    },
+  },
+});
+const postBody = (required) => ({
+  content: {
+    'application/json': {
+      schema: {
+        type: 'object',
+        required,
+        properties: { content: { type: 'string', maxLength: 1000 }, image: { type: 'string', format: 'uri' } },
+      },
+    },
+    'multipart/form-data': {
+      schema: {
+        type: 'object',
+        required,
+        properties: { content: { type: 'string' }, image: { type: 'string', format: 'binary' } },
+      },
+    },
+  },
+});
+const onePost = { type: 'object', properties: { data: ref('Post') } };
+
+paths['/posts'] = {
+  ...postList('All posts, newest first'),
+  post: {
+    tags: ['Posts'],
+    summary: 'Create a post',
+    description: 'JSON with an image URL, or multipart with an `image` file (JPEG/PNG, max 5MB).',
+    security: bearer,
+    requestBody: postBody(['content']),
+    responses: { 201: ok('Created', onePost), 400: errors[400] },
+  },
+};
+paths['/posts/feed'] = postList('Posts from people you follow, plus your own');
+paths['/posts/user/{userId}'] = postList("A user's posts", [idParam('userId', 'Author id')]);
+paths['/posts/{id}'] = {
+  get: {
+    tags: ['Posts'],
+    summary: 'Single post',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    responses: { 200: ok('Post', onePost), 404: errors[404] },
+  },
+  patch: {
+    tags: ['Posts'],
+    summary: 'Edit your post',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    requestBody: postBody([]),
+    responses: { 200: ok('Updated', onePost), 403: ok('Not the author', ref('Error')), 404: errors[404] },
+  },
+  delete: {
+    tags: ['Posts'],
+    summary: 'Delete your post',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    responses: { 200: ok('Deleted'), 403: ok('Not the author', ref('Error')), 404: errors[404] },
+  },
+};
+paths['/posts/{id}/like'] = {
+  post: {
+    tags: ['Posts'],
+    summary: 'Like or unlike (toggle)',
+    description: 'Liking notifies the author.',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    responses: { 200: ok('Updated post', onePost), 404: errors[404] },
+  },
+};
+paths['/posts/{id}/comments'] = {
+  post: {
+    tags: ['Posts'],
+    summary: 'Comment on a post',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    requestBody: json({ type: 'object', required: ['content'], properties: { content: { type: 'string', maxLength: 500 } } }),
+    responses: { 201: ok('Updated post', onePost), 400: errors[400], 404: errors[404] },
+  },
+};
+paths['/posts/{id}/comments/{commentId}'] = {
+  delete: {
+    tags: ['Posts'],
+    summary: 'Delete your comment',
+    security: bearer,
+    parameters: [idParam('id', 'Post id'), idParam('commentId', 'Comment id')],
+    responses: { 200: ok('Deleted'), 403: ok('Not the author', ref('Error')), 404: errors[404] },
+  },
+};
+
 module.exports = {
   openapi: '3.0.3',
   info: {
