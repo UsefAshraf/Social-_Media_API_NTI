@@ -2,6 +2,7 @@ const User = require('../../../shared/models/User');
 const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
+const { notify } = require('../services/notification.service');
 
 const getProfile = asyncHandler(async (req, res) => {
   const userId = req.params.id || req.user._id;
@@ -60,8 +61,22 @@ const followUser = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  await User.updateOne({ _id: req.user._id }, { $addToSet: { following: target._id } });
+  const { modifiedCount } = await User.updateOne(
+    { _id: req.user._id },
+    { $addToSet: { following: target._id } }
+  );
   await User.updateOne({ _id: target._id }, { $addToSet: { followers: req.user._id } });
+
+  // only notify on a new follow, not a repeated request
+  if (modifiedCount) {
+    await notify(req.app.get("io"), {
+      recipient: target._id,
+      sender: req.user._id,
+      type: "follow",
+      content: `${req.user.username} started following you`,
+      link: `/users/${req.user._id}`,
+    });
+  }
 
   res.status(200).json({
     success: true,
