@@ -89,6 +89,81 @@ paths['/auth/reset'] = {
   },
 };
 
+// --- Users
+paths['/users/profile'] = {
+  get: {
+    tags: ['Users'],
+    summary: 'Current user',
+    security: bearer,
+    responses: { 200: ok('Profile', { type: 'object', properties: { data: ref('User') } }), 401: errors[401] },
+  },
+  patch: {
+    tags: ['Users'],
+    summary: 'Update profile',
+    description: 'Send JSON, or multipart with an `image` file to upload an avatar (JPEG/PNG, max 5MB).',
+    security: bearer,
+    requestBody: {
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: { username: { type: 'string' }, email: { type: 'string' }, avatar: { type: 'string', format: 'uri' } },
+          },
+        },
+        'multipart/form-data': {
+          schema: {
+            type: 'object',
+            properties: { username: { type: 'string' }, image: { type: 'string', format: 'binary' } },
+          },
+        },
+      },
+    },
+    responses: { 200: ok('Updated', { type: 'object', properties: { data: ref('User') } }), 400: errors[400] },
+  },
+};
+paths['/users/{id}'] = {
+  get: {
+    tags: ['Users'],
+    summary: 'User by id',
+    security: bearer,
+    parameters: [idParam('id', 'User id')],
+    responses: { 200: ok('Profile', { type: 'object', properties: { data: ref('User') } }), 404: errors[404] },
+  },
+};
+paths['/users/{id}/follow'] = {
+  post: {
+    tags: ['Users'],
+    summary: 'Follow a user',
+    security: bearer,
+    parameters: [idParam('id', 'User to follow')],
+    responses: { 200: ok('Following'), 400: ok('Cannot follow yourself', ref('Error')), 404: errors[404] },
+  },
+  delete: {
+    tags: ['Users'],
+    summary: 'Unfollow a user',
+    security: bearer,
+    parameters: [idParam('id', 'User to unfollow')],
+    responses: { 200: ok('Unfollowed'), 404: errors[404] },
+  },
+};
+const connections = (summary) => ({
+  get: {
+    tags: ['Users'],
+    summary,
+    security: bearer,
+    parameters: [idParam('id', 'User id')],
+    responses: {
+      200: ok('List', {
+        type: 'object',
+        properties: { count: { type: 'integer' }, data: { type: 'array', items: ref('UserSummary') } },
+      }),
+      404: errors[404],
+    },
+  },
+});
+paths['/users/{id}/followers'] = connections('Followers of a user');
+paths['/users/{id}/following'] = connections('Users this user follows');
+
 module.exports = {
   openapi: '3.0.3',
   info: {
