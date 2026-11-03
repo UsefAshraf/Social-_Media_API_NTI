@@ -107,3 +107,40 @@ const statuses = await socket.emitWithAck("presence:query", { userIds });
 | `notification:markAsRead` `{ notificationId }`, `notification:markAllAsRead` | `notification:new` |
 | `presence:query` `{ userIds }` | `presence:update` `{ userId, status, lastSeen }` |
 | | `chat:error`, `notification:error`, `presence:error` |
+
+## Architecture
+
+```
+src/
+├── app.js                  # Express app, HTTP server, Socket.IO, graceful shutdown
+├── api/v2/
+│   ├── routes/             # URL → middleware → controller
+│   ├── controllers/        # HTTP handling
+│   ├── services/           # business logic (auth, email, messages, notifications)
+│   └── validators/         # Joi schemas
+├── sockets/                # chat, notification and presence handlers
+├── docs/openapi.js         # OpenAPI 3 spec
+└── shared/
+    ├── config/             # db, multer, nodemailer
+    ├── middleware/         # auth, validation, rate limiting, error handler
+    ├── models/             # User, Post, Message, Notification
+    └── utils/
+tests/                      # Jest + Supertest + Socket.IO client
+```
+
+Some design decisions:
+
+- **Refresh-token rotation**: each refresh issues a new token and invalidates the previous one, so a leaked token stops working once the real client refreshes.
+- **Notifications are server-side only**: clients can't create them, they're a side effect of likes, comments and follows. Ownership is enforced inside each query (`{ _id, recipient }`), so another user's id just returns 404.
+- **Chat rooms** are deterministic (`sortedUserIdA_sortedUserIdB`), and messages also go to the receiver's personal room, so they arrive even with the chat closed.
+- **Presence** counts sockets per user, so closing one of several tabs doesn't mark you offline. Stale statuses are reset on startup.
+- **A failed notification or email never fails the request** that triggered it.
+
+## Testing
+
+```bash
+npm test                 # 33 tests, in-memory MongoDB, no setup needed
+npm run test:coverage    # ~83% line coverage
+```
+
+The suite covers auth flows (including token rotation and logout), post permissions, uploads, follows and the feed, notification scoping, Socket.IO chat, live notifications and presence. It also fails if any route is missing from the OpenAPI spec.
