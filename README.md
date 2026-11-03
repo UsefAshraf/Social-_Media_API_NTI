@@ -144,3 +144,11 @@ npm run test:coverage    # ~83% line coverage
 ```
 
 The suite covers auth flows (including token rotation and logout), post permissions, uploads, follows and the feed, notification scoping, Socket.IO chat, live notifications and presence. It also fails if any route is missing from the OpenAPI spec.
+
+## Author
+
+**Yousef Ashraf Abdelmoez**: [GitHub](https://github.com/UsefAshraf)
+
+## License
+
+ISC
