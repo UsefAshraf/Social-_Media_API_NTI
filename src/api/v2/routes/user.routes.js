@@ -9,6 +9,10 @@ router.get('/profile', protect, userController.getProfile);
 
 router.get('/:id', protect, userController.getProfile);
 
+router.post('/:id/follow', protect, userController.followUser);
+
+router.delete('/:id/follow', protect, userController.unfollowUser);
+
 router.patch('/profile', protect, validate(updateProfileSchema), userController.updateProfile);
 
 module.exports = router;
