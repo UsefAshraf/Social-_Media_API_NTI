@@ -33,3 +33,39 @@ Built with Node.js, Express and MongoDB, tested with Jest, documented with OpenA
 | Uploads & email | Multer, Nodemailer |
 | Testing | Jest, Supertest, mongodb-memory-server, socket.io-client |
 | Docs & DevOps | OpenAPI 3 / Swagger UI, Docker, docker compose, GitHub Actions |
+
+## Getting started
+
+### With Docker (recommended)
+
+```bash
+cp .env.example .env        # then set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET
+docker compose up --build
+```
+
+The API runs on http://localhost:5000 with MongoDB in a container and uploads in a named volume.
+
+### Locally
+
+Requires Node.js 20+ and a MongoDB instance.
+
+```bash
+npm install
+cp .env.example .env        # set MONGODB_URI and the JWT secrets
+npm run dev                 # or: npm start
+```
+
+Check it is up: `curl http://localhost:5000/health`, then open **http://localhost:5000/api-docs**.
+
+### Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `5000` | HTTP port |
+| `MONGODB_URI` | – | MongoDB connection string |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | – | Token signing secrets (required) |
+| `JWT_ACCESS_EXPIRY` / `JWT_REFRESH_EXPIRY` | `15m` / `7d` | Token lifetimes |
+| `ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated frontend origins (HTTP and Socket.IO) |
+| `AUTH_RATE_LIMIT_MAX` | `20` | Auth requests per IP per 15 minutes |
+| `EMAIL` / `PASSWORD` | – | Gmail address and app password; emails are skipped if unset |
+| `FRONTEND_URL` | `http://localhost:3000` | Base URL for password reset links |
