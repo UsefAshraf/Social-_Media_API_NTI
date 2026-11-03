@@ -608,21 +608,13 @@
         {
           "name": "Reset Password",
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"john@example.com\"\n}"
-            },
+            "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v2/auth/reset",
+              "raw": "{{baseUrl}}/api/v2/auth/reset?email=john@example.com",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v2", "auth", "reset"]
+              "path": ["api", "v2", "auth", "reset"],
+              "query": [{ "key": "email", "value": "john@example.com" }]
             },
             "description": "Request password reset email (V2)"
           },
