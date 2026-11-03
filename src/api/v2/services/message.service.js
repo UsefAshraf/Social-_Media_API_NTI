@@ -57,7 +57,7 @@ exports.getConversations = async (userId) => {
         {
             $group: {
                 _id: "$room",
-                lastMessage: { $first: "$ROOT" },
+                lastMessage: { $first: "$$ROOT" },
                 unreadCount: {
                     $sum: { $cond: [{ $and: [{ $eq: ["$receiver", me] }, { $eq: ["$read", false] }] }, 1, 0] },
                 },
