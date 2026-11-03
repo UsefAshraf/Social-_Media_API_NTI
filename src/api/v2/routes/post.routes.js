@@ -13,6 +13,10 @@ router.post('/', protect, validate(createPostSchema), postController.createPost)
 
 router.get('/', protect, postController.getPosts);
 
+router.get('/feed', protect, postController.getFeed);
+
+router.get('/user/:userId', protect, postController.getUserPosts);
+
 router.get('/:id', protect, postController.getPost);
 
 router.patch('/:id', protect, validate(updatePostSchema), postController.updatePost);
