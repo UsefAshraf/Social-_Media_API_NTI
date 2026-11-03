@@ -69,3 +69,41 @@ Check it is up: `curl http://localhost:5000/health`, then open **http://localhos
 | `AUTH_RATE_LIMIT_MAX` | `20` | Auth requests per IP per 15 minutes |
 | `EMAIL` / `PASSWORD` | – | Gmail address and app password; emails are skipped if unset |
 | `FRONTEND_URL` | `http://localhost:3000` | Base URL for password reset links |
+
+## API
+
+Full interactive reference: **`/api-docs`** (raw spec at `/api-docs.json`). A Postman collection is also included.
+All routes are under `/api/v2` and, except register/login/refresh/reset, need `Authorization: Bearer <accessToken>`.
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /auth/register` · `POST /auth/login` · `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/reset?email=` · `POST /auth/reset` |
+| Users | `GET /users/profile` · `PATCH /users/profile` · `GET /users/:id` · `POST/DELETE /users/:id/follow` · `GET /users/:id/followers` · `GET /users/:id/following` |
+| Posts | `GET/POST /posts` · `GET /posts/feed` · `GET /posts/user/:userId` · `GET/PATCH/DELETE /posts/:id` · `POST /posts/:id/like` · `POST /posts/:id/comments` · `DELETE /posts/:id/comments/:commentId` |
+| Messages | `GET /messages/conversations` · `GET /messages/:userId?before=&limit=` · `PATCH /messages/:userId/read` |
+| Notifications | `GET /notifications` · `PATCH /notifications/read-all` · `PATCH /notifications/:id/read` · `DELETE /notifications/:id` |
+
+Images are uploaded as multipart field `image` (JPEG/PNG, max 5MB) on `POST/PATCH /posts` and `PATCH /users/profile`, and served from `/uploads`.
+
+Errors share one shape: `{ "success": false, "error": "message" }`.
+
+### Socket.IO
+
+```js
+const socket = io("http://localhost:5000", { auth: { token: accessToken } });
+
+socket.emit("chat:message", { receiverId, content: "Hi!" });
+socket.on("chat:message", ({ message }) => render(message));
+socket.on("notification:new", (notification) => toast(notification.content));
+socket.on("presence:update", ({ userId, status, lastSeen }) => updateDot(userId, status));
+const statuses = await socket.emitWithAck("presence:query", { userIds });
+```
+
+| Emit | Listen |
+|---|---|
+| `chat:join`, `chat:leave` `{ userId }` | `chat:joined` |
+| `chat:message` `{ receiverId, content }` | `chat:message` `{ message }` |
+| `chat:typing` `{ receiverId, isTyping }` | `chat:typing` `{ userId, isTyping }` |
+| `notification:markAsRead` `{ notificationId }`, `notification:markAllAsRead` | `notification:new` |
+| `presence:query` `{ userIds }` | `presence:update` `{ userId, status, lastSeen }` |
+| | `chat:error`, `notification:error`, `presence:error` |
