@@ -1,6 +1,10 @@
 const ApiError = require('../utils/ApiError');
+const { fileUrl, removeUpload } = require('../utils/files');
 
 const errorHandler = (err, req, res, next) => {
+  // a failed request should not leave its uploaded file behind
+  if (req.file) removeUpload(fileUrl(req.file));
+
   let error = { ...err };
   error.message = err.message;
   error.statusCode = err.statusCode || 500;
