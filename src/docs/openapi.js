@@ -266,6 +266,66 @@ paths['/posts/{id}/comments/{commentId}'] = {
   },
 };
 
+// --- Messages
+paths['/messages/conversations'] = {
+  get: {
+    tags: ['Messages'],
+    summary: 'Your conversations, most recent first',
+    security: bearer,
+    responses: {
+      200: ok('Conversations', {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                room: { type: 'string' },
+                user: ref('UserSummary'),
+                lastMessage: ref('Message'),
+                unreadCount: { type: 'integer' },
+              },
+            },
+          },
+        },
+      }),
+    },
+  },
+};
+paths['/messages/{userId}'] = {
+  get: {
+    tags: ['Messages'],
+    summary: 'Chat history with a user (newest first)',
+    description: 'Pass the returned `nextCursor` as `before` to load older messages.',
+    security: bearer,
+    parameters: [
+      idParam('userId', 'The other user'),
+      { name: 'before', in: 'query', schema: { type: 'string', format: 'date-time' } },
+      { name: 'limit', in: 'query', schema: { type: 'integer', maximum: 100, default: 30 } },
+    ],
+    responses: {
+      200: ok('Messages', {
+        type: 'object',
+        properties: {
+          data: { type: 'array', items: ref('Message') },
+          nextCursor: { type: 'string', format: 'date-time', nullable: true },
+        },
+      }),
+      404: errors[404],
+    },
+  },
+};
+paths['/messages/{userId}/read'] = {
+  patch: {
+    tags: ['Messages'],
+    summary: 'Mark messages from a user as read',
+    security: bearer,
+    parameters: [idParam('userId', 'The other user')],
+    responses: { 200: ok('Count updated'), 404: errors[404] },
+  },
+};
+
 module.exports = {
   openapi: '3.0.3',
   info: {
