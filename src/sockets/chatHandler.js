@@ -26,8 +26,8 @@ const chatHandler = (io,socket) => {
             const room = await createRoom(socket.userId, receiverId);
             //create message
             const newMessage = await createMessage(socket.userId, receiverId, content, room);
-            //emit message to both users
-            io.to(room).emit("chat:message", { message:newMessage })
+            //emit to the chat room and the receiver's personal room, so they get it even with the chat closed
+            io.to(room).to(receiverId.toString()).emit("chat:message", { message:newMessage })
             console.log(`User ${socket.userId} sent message to ${receiverId}`);
 
         }catch(error){
