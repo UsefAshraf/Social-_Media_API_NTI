@@ -62,7 +62,7 @@ const followUser = asyncHandler(async (req, res) => {
   }
 
   const { modifiedCount } = await User.updateOne(
-    { _id: req.user._id },
+    { _id: req.user._id, following: { $ne: target._id } },
     { $addToSet: { following: target._id } }
   );
   await User.updateOne({ _id: target._id }, { $addToSet: { followers: req.user._id } });
