@@ -146,6 +146,9 @@ JWT_REFRESH_SECRET=your_refresh_token_secret_here
 JWT_ACCESS_EXPIRY=15m
 JWT_REFRESH_EXPIRY=7d
 
+# Max auth requests per IP per 15 minutes
+AUTH_RATE_LIMIT_MAX=20
+
 # CORS
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
