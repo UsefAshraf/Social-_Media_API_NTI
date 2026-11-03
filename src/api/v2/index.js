@@ -4,9 +4,11 @@ const router = express.Router();
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const postRoutes = require('./routes/post.routes');
+const messageRoutes = require('./routes/message.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/posts', postRoutes);
+router.use('/messages', messageRoutes);
 
 module.exports = router;
