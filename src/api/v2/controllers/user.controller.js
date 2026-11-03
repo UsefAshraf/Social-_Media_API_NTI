@@ -1,6 +1,7 @@
 const User = require('../../../shared/models/User');
 const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
+const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 
 const getProfile = asyncHandler(async (req, res) => {
   const userId = req.params.id || req.user._id;
@@ -18,12 +19,15 @@ const getProfile = asyncHandler(async (req, res) => {
 });
 
 const updateProfile = asyncHandler(async (req, res) => {
-  const { username, email, avatar } = req.body;
+  const { username, email } = req.body;
+  const avatar = fileUrl(req.file) ?? req.body.avatar;
 
   const updateData = {};
   if (username) updateData.username = username;
   if (email) updateData.email = email;
   if (avatar !== undefined) updateData.avatar = avatar;
+
+  const previous = await User.findById(req.user._id).select('avatar');
 
   const user = await User.findByIdAndUpdate(
     req.user._id,
@@ -33,6 +37,10 @@ const updateProfile = asyncHandler(async (req, res) => {
       runValidators: true,
     }
   ).select('-password -refreshToken');
+
+  if (avatar !== undefined && previous.avatar !== user.avatar) {
+    await removeUpload(previous.avatar);
+  }
 
   res.status(200).json({
     success: true,
