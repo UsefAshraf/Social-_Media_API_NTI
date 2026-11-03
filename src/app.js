@@ -15,7 +15,8 @@ const http = require("http");
 const app = express();
 const initializeSocketIO = require("./sockets/index");
 
-app.use(helmet());
+// allow frontends on other origins to load /uploads images
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 const server = http.createServer(app);
 
 const io = initializeSocketIO(server);
