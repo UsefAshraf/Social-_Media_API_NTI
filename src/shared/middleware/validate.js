@@ -1,4 +1,3 @@
-const { schema } = require('../models/User');
 const ApiError = require('../utils/ApiError');
 
 // const validate = (schema) => {
@@ -18,10 +17,8 @@ const validate = (schema) => {
   return (req,res,next) => {
     const {error} = schema.validate(req.body, {abortEarly:false});
 
-    console.log(error)
     if (error){
       const message = error.details.map((detail)=> detail.message).join(', ');
-      console.log(message)
       throw new ApiError(400, message)
     }
 
