@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand",
+    "test:coverage": "jest --runInBand --coverage"
   },
   "keywords": [
     "social-media",
@@ -39,5 +40,18 @@
     "nodemon": "^3.0.2",
     "socket.io-client": "^4.8.1",
     "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/tests/setup/env.js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup/db.js"
+    ],
+    "testTimeout": 30000,
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ]
   }
 }
