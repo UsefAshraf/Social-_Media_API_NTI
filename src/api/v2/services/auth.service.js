@@ -95,10 +95,12 @@ const refreshAccessToken = async (refreshToken) => {
     }
 
     const newAccessToken = generateAccessToken(user._id);
+    const newRefreshToken = generateRefreshToken(user._id);
 
-    //sadsaf;lsdaj;fgljdasg;ljad;slgjka;ldskg;laksd;glkasd;lgk;sldkg;sldakg;lasd
+    user.refreshToken = newRefreshToken;
+    await user.save();
 
-    return { accessToken: newAccessToken };
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   } catch (error) {
     throw new ApiError(401, 'Invalid or expired refresh token');
   }
