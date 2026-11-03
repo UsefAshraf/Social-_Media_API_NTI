@@ -2,6 +2,7 @@ const socketIO = require("socket.io");
 const { verifyAccessToken } = require("../shared/utils/tokens");
 const { chatHandler } = require("./chatHandler");
 const { notificationHandler } = require("./notificationHandler");
+const { presenceHandler, resetPresence } = require("./presenceHandler");
 
 // const initializeSocketIO = (server) => {
 //     const io = socketIO(server, {
@@ -51,7 +52,6 @@ const { notificationHandler } = require("./notificationHandler");
 // module.exports = initializeSocketIO
 
 const initializeSocketIO = (server) => {
-    const onlineUsers = new Set();
     const io = socketIO(server, {
         cors: {
             origin: process.env.ALLOWED_ORIGINS?.split(",") || "http://localhost:3000",
@@ -78,17 +78,18 @@ const initializeSocketIO = (server) => {
         }
     });
 
+    resetPresence().catch((error) => console.log(error));
+
     io.on("connection", (socket) => {
-        onlineUsers.add(socket.userId.toString());
         console.log(`User connected ${socket.userId}`);
         socket.join(socket.userId.toString());
 
         // Call chat handler
         chatHandler(io, socket);
         notificationHandler(io, socket);
+        presenceHandler(io, socket);
 
         socket.on("disconnect", () => {
-            onlineUsers.delete(socket.userId.toString());
             console.log(`User disconnected ${socket.userId}`);
         });
 
