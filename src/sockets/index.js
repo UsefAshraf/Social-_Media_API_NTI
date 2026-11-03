@@ -3,6 +3,7 @@ const { verifyAccessToken } = require("../shared/utils/tokens");
 const { chatHandler } = require("./chatHandler");
 const { notificationHandler } = require("./notificationHandler");
 const { presenceHandler, resetPresence } = require("./presenceHandler");
+const { log } = require("../shared/utils/logger");
 
 const initializeSocketIO = (server) => {
     const io = socketIO(server, {
@@ -34,7 +35,7 @@ const initializeSocketIO = (server) => {
     resetPresence().catch((error) => console.log(error));
 
     io.on("connection", (socket) => {
-        console.log(`User connected ${socket.userId}`);
+        log(`User connected ${socket.userId}`);
         socket.join(socket.userId.toString());
 
         // Call chat handler
@@ -43,7 +44,7 @@ const initializeSocketIO = (server) => {
         presenceHandler(io, socket);
 
         socket.on("disconnect", () => {
-            console.log(`User disconnected ${socket.userId}`);
+            log(`User disconnected ${socket.userId}`);
         });
 
         socket.on("error", (error) => {
