@@ -3,6 +3,10 @@ const { createTransporter } = require("../../../shared/config/nodemailerConfig")
 const { welcomeEmailTemplate, passwordResetEmail } = require("../../../shared/utils/emailTemplates")
 
 const sendEmail = async (to, subject, html) => {
+  if (!process.env.EMAIL || !process.env.PASSWORD) {
+    if (process.env.NODE_ENV !== "test") console.warn(`EMAIL/PASSWORD not set, skipping email: ${subject}`)
+    return null
+  }
   try {
     const transporter = createTransporter()
     const mailOptions = {
