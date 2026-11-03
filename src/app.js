@@ -5,7 +5,6 @@ const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const cookieParser = require("cookie-parser");
 const errorHandler = require("./shared/middleware/errorHandler");
-const v1Routes = require("./api/v1");
 const v2Routes = require("./api/v2");
 const connectDB = require("./shared/config/db");
 const multer = require("multer");
@@ -41,7 +40,6 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running" });
 });
 
-// app.use('/api/v1', v1Routes);
 app.use("/api/v2", v2Routes);
 
 app.use((req, res) => {
