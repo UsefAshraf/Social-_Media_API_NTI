@@ -1,9 +1,14 @@
 const multer = require("multer")
+const fs = require("fs")
+const path = require("path")
+
+const uploadDir = path.join(__dirname, "..", "..", "..", "uploads")
+fs.mkdirSync(uploadDir, { recursive: true })
 
 const fileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         // image-2025-11-7.jpg
-        cb(null, "uploads")
+        cb(null, uploadDir)
     },
     filename: (req, file, cb) => {
         const filename = `${Date.now()}-${file.originalname}`
