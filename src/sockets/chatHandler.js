@@ -1,4 +1,5 @@
 const { createRoom, createMessage } = require("../api/v2/services/message.service")
+const { log } = require("../shared/utils/logger")
 
 const chatHandler = (io,socket) => {
     // join
@@ -7,7 +8,7 @@ const chatHandler = (io,socket) => {
             const { userId } = data
             const room = await createRoom(socket.userId, userId)
             socket.join(room)
-            console.log(`User ${socket.userId} joined room ${room}`);
+            log(`User ${socket.userId} joined room ${room}`);
             socket.emit("chat:joined", { room,userId })
         }catch(error){
             console.log(error)
@@ -28,7 +29,7 @@ const chatHandler = (io,socket) => {
             const newMessage = await createMessage(socket.userId, receiverId, content, room);
             //emit to the chat room and the receiver's personal room, so they get it even with the chat closed
             io.to(room).to(receiverId.toString()).emit("chat:message", { message:newMessage })
-            console.log(`User ${socket.userId} sent message to ${receiverId}`);
+            log(`User ${socket.userId} sent message to ${receiverId}`);
 
         }catch(error){
             console.log(error)
@@ -53,7 +54,7 @@ const chatHandler = (io,socket) => {
         try{
             const room = await createRoom(socket.userId, data.userId)
             socket.leave(room)
-            console.log(`User ${socket.userId} left room ${room}`);
+            log(`User ${socket.userId} left room ${room}`);
         }catch(error){
             console.log(error)
             socket.emit("chat:error", { message:"Failed to leave room",error })
