@@ -4,17 +4,23 @@ const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 const { notify } = require('../services/notification.service');
+const { resolveMentions, notifyMentions } = require('../services/mention.service');
 const { parsePagination, paginationMeta } = require('../../../shared/utils/pagination');
 
 const createPost = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const image = fileUrl(req.file) || req.body.image;
 
+  const mentioned = await resolveMentions(content);
+
   const post = await Post.create({
     content,
     image: image || '',
     author: req.user._id,
+    mentions: mentioned.map((u) => u._id),
   });
+
+  await notifyMentions(req.app.get('io'), mentioned, { sender: req.user, where: 'post', post });
 
   await post.populate('author', 'username avatar');
 
@@ -84,6 +90,25 @@ const getUserPosts = asyncHandler(async (req, res) => {
   });
 });
 
+const getPostsByHashtag = asyncHandler(async (req, res) => {
+  const paging = parsePagination(req.query);
+  const filter = { hashtags: req.params.tag.replace(/^#/, '').toLowerCase() };
+
+  const posts = await Post.find(filter)
+    .populate('author', 'username avatar')
+    .sort({ createdAt: -1 })
+    .skip(paging.skip)
+    .limit(paging.limit);
+
+  const total = await Post.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    data: posts,
+    pagination: paginationMeta(paging, total),
+  });
+});
+
 const getPost = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.id)
     .populate('author', 'username avatar')
@@ -113,13 +138,21 @@ const updatePost = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const image = fileUrl(req.file) ?? req.body.image;
 
-  if (content) post.content = content;
+  let newlyMentioned = [];
+  if (content) {
+    const mentioned = await resolveMentions(content);
+    const previous = new Set(post.mentions.map(String));
+    newlyMentioned = mentioned.filter((u) => !previous.has(u._id.toString()));
+    post.content = content;
+    post.mentions = mentioned.map((u) => u._id);
+  }
   if (image !== undefined && image !== post.image) {
     await removeUpload(post.image);
     post.image = image;
   }
 
   await post.save();
+  await notifyMentions(req.app.get('io'), newlyMentioned, { sender: req.user, where: 'post', post });
   await post.populate('author', 'username avatar');
 
   res.status(200).json({
@@ -209,6 +242,10 @@ const addComment = asyncHandler(async (req, res) => {
     relatedId: post._id,
   });
 
+  // the post author already got a comment notification
+  const mentioned = (await resolveMentions(content)).filter((u) => !u._id.equals(post.author));
+  await notifyMentions(req.app.get('io'), mentioned, { sender: req.user, where: 'comment', post });
+
   await post.populate('author', 'username avatar');
   await post.populate('comments.author', 'username avatar');
 
@@ -251,6 +288,7 @@ module.exports = {
   getPosts,
   getFeed,
   getUserPosts,
+  getPostsByHashtag,
   getPost,
   updatePost,
   deletePost,

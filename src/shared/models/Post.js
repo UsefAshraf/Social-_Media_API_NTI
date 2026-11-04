@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { extractHashtags } = require('../utils/text');
 
 const commentSchema = new mongoose.Schema(
   {
@@ -43,11 +44,32 @@ const postSchema = new mongoose.Schema(
       },
     ],
     comments: [commentSchema],
+    hashtags: [
+      {
+        type: String,
+        index: true,
+      },
+    ],
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     timestamps: true,
   }
 );
+
+postSchema.index({ content: 'text' });
+
+postSchema.pre('validate', function (next) {
+  if (this.isModified('content')) {
+    this.hashtags = extractHashtags(this.content);
+  }
+  next();
+});
 
 const Post = mongoose.model('Post', postSchema);
 
