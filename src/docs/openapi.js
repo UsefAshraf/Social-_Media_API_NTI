@@ -751,7 +751,8 @@ module.exports = {
         properties: {
           _id: { type: 'string' },
           content: { type: 'string' },
-          image: { type: 'string', example: '/uploads/1730000000000-ab12cd34ef56.png' },
+          image: { type: 'string', example: '/uploads/1730000000000-ab12cd34ef56.webp' },
+          thumbnail: { type: 'string', example: '/uploads/1730000000000-ab12cd34ef56-thumb.webp' },
           author: ref('UserSummary'),
           likes: { type: 'array', items: { type: 'string' } },
           hashtags: { type: 'array', items: { type: 'string' }, example: ['nodejs'] },
