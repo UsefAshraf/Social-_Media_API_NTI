@@ -69,6 +69,16 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    // users this user has blocked; private
+    blocked: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+      ],
+      select: false,
+    },
     // saved posts; private, so excluded from queries unless selected
     bookmarks: {
       type: [
