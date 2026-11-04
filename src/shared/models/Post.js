@@ -14,6 +14,17 @@ const commentSchema = new mongoose.Schema(
       trim: true,
       maxlength: [500, 'Comment cannot exceed 500 characters'],
     },
+    // set on replies; threads are one level deep
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
   {
     timestamps: true,
