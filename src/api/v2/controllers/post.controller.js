@@ -8,6 +8,7 @@ const { resolveMentions, notifyMentions } = require('../services/mention.service
 const { hiddenUserIds, isBlockedBetween } = require('../services/block.service');
 const postService = require('../services/post.service');
 const { listPosts } = require('../services/feed.service');
+const { handleUpload } = require('../services/image.service');
 
 const assertNotBlocked = async (userId, post) => {
   if (await isBlockedBetween(userId, post.author)) {
@@ -18,7 +19,8 @@ const { parsePagination, paginationMeta } = require('../../../shared/utils/pagin
 
 const createPost = asyncHandler(async (req, res) => {
   const { content } = req.body;
-  const image = fileUrl(req.file) || req.body.image;
+  const uploaded = fileUrl(req.file);
+  const image = uploaded || req.body.image;
 
   const mentioned = await resolveMentions(content);
 
@@ -30,6 +32,7 @@ const createPost = asyncHandler(async (req, res) => {
   });
 
   await notifyMentions(req.app.get('io'), mentioned, { sender: req.user, where: 'post', post });
+  if (uploaded) Object.assign(post, await handleUpload('post', post, uploaded));
 
   await post.populate('author', 'username avatar');
 
@@ -130,7 +133,8 @@ const updatePost = asyncHandler(async (req, res) => {
   }
 
   const { content } = req.body;
-  const image = fileUrl(req.file) ?? req.body.image;
+  const uploaded = fileUrl(req.file);
+  const image = uploaded ?? req.body.image;
 
   let newlyMentioned = [];
   if (content) {
@@ -142,11 +146,14 @@ const updatePost = asyncHandler(async (req, res) => {
   }
   if (image !== undefined && image !== post.image) {
     await removeUpload(post.image);
+    await removeUpload(post.thumbnail);
     post.image = image;
+    post.thumbnail = '';
   }
 
   await post.save();
   await notifyMentions(req.app.get('io'), newlyMentioned, { sender: req.user, where: 'post', post });
+  if (uploaded) Object.assign(post, await handleUpload('post', post, uploaded));
   await post.populate('author', 'username avatar');
 
   res.status(200).json({

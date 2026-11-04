@@ -5,6 +5,7 @@ const { removeUpload } = require('../../../shared/utils/files');
 const deletePost = async (post) => {
   await post.deleteOne();
   await removeUpload(post.image);
+  await removeUpload(post.thumbnail);
   await User.updateMany({ bookmarks: post._id }, { $pull: { bookmarks: post._id } });
 };
 

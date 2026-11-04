@@ -3,6 +3,7 @@ const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 const { notify } = require('../services/notification.service');
+const { handleUpload } = require('../services/image.service');
 const { isBlockedBetween } = require('../services/block.service');
 
 const getProfile = asyncHandler(async (req, res) => {
@@ -22,7 +23,8 @@ const getProfile = asyncHandler(async (req, res) => {
 
 const updateProfile = asyncHandler(async (req, res) => {
   const { username, email } = req.body;
-  const avatar = fileUrl(req.file) ?? req.body.avatar;
+  const uploaded = fileUrl(req.file);
+  const avatar = uploaded ?? req.body.avatar;
 
   const updateData = {};
   if (username) updateData.username = username;
@@ -43,6 +45,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   if (avatar !== undefined && previous.avatar !== user.avatar) {
     await removeUpload(previous.avatar);
   }
+  if (uploaded) Object.assign(user, await handleUpload('avatar', user, uploaded));
 
   res.status(200).json({
     success: true,

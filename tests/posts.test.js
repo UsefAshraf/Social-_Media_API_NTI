@@ -99,12 +99,12 @@ describe('posts', () => {
         .attach('image', PNG, { filename: 'pic.png', contentType: 'image/png' });
 
       expect(res.status).toBe(201);
-      expect(res.body.data.image).toMatch(/^\/uploads\/.+\.png$/);
-      const file = path.join(uploadDir, path.basename(res.body.data.image));
-      expect(fs.existsSync(file)).toBe(true);
+      expect(res.body.data.image).toMatch(/^\/uploads\/.+\.webp$/);
+      const files = [res.body.data.image, res.body.data.thumbnail].map((url) => path.join(uploadDir, path.basename(url)));
+      files.forEach((file) => expect(fs.existsSync(file)).toBe(true));
 
       await api().delete(`/api/v2/posts/${res.body.data._id}`).set('Authorization', alice.auth);
-      expect(fs.existsSync(file)).toBe(false);
+      files.forEach((file) => expect(fs.existsSync(file)).toBe(false));
     });
 
     it('rejects non-image files', async () => {
