@@ -1,4 +1,5 @@
 const { createRoom, createMessage } = require("../api/v2/services/message.service")
+const { isBlockedBetween } = require("../api/v2/services/block.service")
 const { log } = require("../shared/utils/logger")
 
 const chatHandler = (io,socket) => {
@@ -22,6 +23,9 @@ const chatHandler = (io,socket) => {
             const { receiverId,content } = data;
             if(!receiverId || !content){
                 return socket.emit("chat:error", { message:"receiverId and content are required" })
+            }
+            if(await isBlockedBetween(socket.userId, receiverId)){
+                return socket.emit("chat:error", { message:"You cannot message this user" })
             }
             //create room
             const room = await createRoom(socket.userId, receiverId);

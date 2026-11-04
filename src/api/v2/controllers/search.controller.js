@@ -3,7 +3,7 @@ const searchService = require('../services/search.service');
 
 const search = asyncHandler(async (req, res) => {
   const { q, type, limit } = req.query;
-  const data = await searchService.search(q, { type, limit });
+  const data = await searchService.search(q, { type, limit, viewerId: req.user._id });
 
   res.status(200).json({
     success: true,
