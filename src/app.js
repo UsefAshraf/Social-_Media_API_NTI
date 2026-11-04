@@ -12,6 +12,7 @@ const { fileStorage, fileFilter, limits } = require("./shared/config/multerConfi
 const path = require("path");
 const http = require("http");
 const mongoose = require("mongoose");
+const { getRedis, closeRedis } = require("./shared/config/redis");
 const app = express();
 const initializeSocketIO = require("./sockets/index");
 const swaggerUi = require("swagger-ui-express");
@@ -40,7 +41,18 @@ app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 app.use(mongoSanitize());
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "OK", message: "Server is running" });
+  const redis = getRedis();
+  const checks = {
+    database: mongoose.connection.readyState === 1 ? "up" : "down",
+    redis: redis ? (redis.status === "ready" ? "up" : "down") : "disabled",
+  };
+  const healthy = checks.database === "up" && checks.redis !== "down";
+
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? "OK" : "DEGRADED",
+    message: healthy ? "Server is running" : "A dependency is unavailable",
+    checks,
+  });
 });
 
 app.get("/api-docs.json", (req, res) => res.json(openApiSpec));
@@ -81,7 +93,7 @@ const shutdown = (signal) => {
   console.log(`${signal} received, shutting down`);
   io.close();
   server.close(async () => {
-    await mongoose.connection.close();
+    await Promise.all([mongoose.connection.close(), closeRedis()]);
     process.exit(0);
   });
   // force exit if connections do not close in time
