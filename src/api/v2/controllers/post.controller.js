@@ -4,17 +4,23 @@ const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 const { notify } = require('../services/notification.service');
+const { resolveMentions, notifyMentions } = require('../services/mention.service');
 const { parsePagination, paginationMeta } = require('../../../shared/utils/pagination');
 
 const createPost = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const image = fileUrl(req.file) || req.body.image;
 
+  const mentioned = await resolveMentions(content);
+
   const post = await Post.create({
     content,
     image: image || '',
     author: req.user._id,
+    mentions: mentioned.map((u) => u._id),
   });
+
+  await notifyMentions(req.app.get('io'), mentioned, { sender: req.user, where: 'post', post });
 
   await post.populate('author', 'username avatar');
 
@@ -113,13 +119,21 @@ const updatePost = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const image = fileUrl(req.file) ?? req.body.image;
 
-  if (content) post.content = content;
+  let newlyMentioned = [];
+  if (content) {
+    const mentioned = await resolveMentions(content);
+    const previous = new Set(post.mentions.map(String));
+    newlyMentioned = mentioned.filter((u) => !previous.has(u._id.toString()));
+    post.content = content;
+    post.mentions = mentioned.map((u) => u._id);
+  }
   if (image !== undefined && image !== post.image) {
     await removeUpload(post.image);
     post.image = image;
   }
 
   await post.save();
+  await notifyMentions(req.app.get('io'), newlyMentioned, { sender: req.user, where: 'post', post });
   await post.populate('author', 'username avatar');
 
   res.status(200).json({
@@ -208,6 +222,10 @@ const addComment = asyncHandler(async (req, res) => {
     link: `/posts/${post._id}`,
     relatedId: post._id,
   });
+
+  // the post author already got a comment notification
+  const mentioned = (await resolveMentions(content)).filter((u) => !u._id.equals(post.author));
+  await notifyMentions(req.app.get('io'), mentioned, { sender: req.user, where: 'comment', post });
 
   await post.populate('author', 'username avatar');
   await post.populate('comments.author', 'username avatar');
