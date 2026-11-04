@@ -6,9 +6,21 @@ const {
   generateRefreshToken,
   verifyRefreshToken,
 } = require('../../../shared/utils/tokens');
-const { sendWelcomeEmail, sendResetEmail } = require('./email.service');
+const emailService = require('./email.service');
+const { sendWelcomeEmail, sendResetEmail } = emailService;
 
 const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex")
+
+const VERIFY_TOKEN_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+// Issue a fresh verification token and email it; replaces any previous token
+const sendVerification = async (user) => {
+  const token = crypto.randomBytes(32).toString("hex")
+  user.verifyToken = hashToken(token)
+  user.verifyTokenExpiration = Date.now() + VERIFY_TOKEN_TTL
+  await user.save()
+  await emailService.sendVerificationEmail(user.email, user.username, token)
+}
 
 const register = async (userData) => {
   const { username, email, password } = userData;
@@ -35,6 +47,7 @@ const register = async (userData) => {
   user.refreshToken = refreshToken;
   await user.save();
   await sendWelcomeEmail(user.username, user.email)
+  await sendVerification(user)
 
   return {
     user: {
@@ -42,6 +55,7 @@ const register = async (userData) => {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      emailVerified: user.emailVerified,
     },
     accessToken,
     refreshToken,
@@ -73,6 +87,7 @@ const login = async (email, password) => {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      emailVerified: user.emailVerified,
     },
     accessToken,
     refreshToken,
