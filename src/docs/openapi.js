@@ -14,6 +14,13 @@ const pageParams = [
   { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 10 } },
 ];
 
+const cursorParam = {
+  name: 'cursor',
+  in: 'query',
+  description: 'nextCursor from the previous page. Use instead of page for stable infinite scroll.',
+  schema: { type: 'string' },
+};
+
 const json = (schema) => ({ content: { 'application/json': { schema } } });
 const ok = (description, schema) => ({ description, ...(schema && json(schema)) });
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
@@ -248,7 +255,7 @@ const postBody = (required) => ({
 const onePost = { type: 'object', properties: { data: ref('Post') } };
 
 paths['/posts'] = {
-  ...postList('All posts, newest first'),
+  ...postList('All posts, newest first', [cursorParam]),
   post: {
     tags: ['Posts'],
     summary: 'Create a post',
@@ -260,7 +267,7 @@ paths['/posts'] = {
     responses: { 201: ok('Created', onePost), 400: errors[400] },
   },
 };
-paths['/posts/feed'] = postList('Posts from people you follow, plus your own');
+paths['/posts/feed'] = postList('Posts from people you follow, plus your own', [cursorParam]);
 paths['/posts/user/{userId}'] = postList("A user's posts", [idParam('userId', 'Author id')]);
 paths['/posts/bookmarks'] = postList('Your saved posts, most recently saved first');
 paths['/posts/{id}/bookmark'] = {
@@ -653,6 +660,7 @@ module.exports = {
           limit: { type: 'integer' },
           total: { type: 'integer' },
           pages: { type: 'integer' },
+          nextCursor: { type: 'string', nullable: true, description: 'Only on /posts and /posts/feed' },
         },
       },
       UserSummary: {

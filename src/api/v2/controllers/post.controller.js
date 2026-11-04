@@ -7,6 +7,7 @@ const { notify } = require('../services/notification.service');
 const { resolveMentions, notifyMentions } = require('../services/mention.service');
 const { hiddenUserIds, isBlockedBetween } = require('../services/block.service');
 const postService = require('../services/post.service');
+const { listPosts } = require('../services/feed.service');
 
 const assertNotBlocked = async (userId, post) => {
   if (await isBlockedBetween(userId, post.author)) {
@@ -39,44 +40,21 @@ const createPost = asyncHandler(async (req, res) => {
 });
 
 const getPosts = asyncHandler(async (req, res) => {
-  const paging = parsePagination(req.query);
   const filter = { author: { $nin: await hiddenUserIds(req.user._id) } };
-
-  const posts = await Post.find(filter)
-    .populate('author', 'username avatar')
-    .populate('comments.author', 'username avatar')
-    .sort({ createdAt: -1 })
-    .skip(paging.skip)
-    .limit(paging.limit);
-
-  const total = await Post.countDocuments(filter);
 
   res.status(200).json({
     success: true,
-    data: posts,
-    pagination: paginationMeta(paging, total),
+    ...(await listPosts(filter, req.query)),
   });
 });
 
 const getFeed = asyncHandler(async (req, res) => {
-  const paging = parsePagination(req.query);
-
   const me = await User.findById(req.user._id).select("following");
   const filter = { author: { $in: [...me.following, req.user._id] } };
 
-  const posts = await Post.find(filter)
-    .populate("author", "username avatar")
-    .populate("comments.author", "username avatar")
-    .sort({ createdAt: -1 })
-    .skip(paging.skip)
-    .limit(paging.limit);
-
-  const total = await Post.countDocuments(filter);
-
   res.status(200).json({
     success: true,
-    data: posts,
-    pagination: paginationMeta(paging, total),
+    ...(await listPosts(filter, req.query)),
   });
 });
 
