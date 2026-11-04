@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer")
 const { createTransporter } = require("../../../shared/config/nodemailerConfig")
-const { welcomeEmailTemplate, passwordResetEmail } = require("../../../shared/utils/emailTemplates")
+const { welcomeEmailTemplate, passwordResetEmail, verifyEmailTemplate } = require("../../../shared/utils/emailTemplates")
 
 const sendEmail = async (to, subject, html) => {
   if (!process.env.EMAIL || !process.env.PASSWORD) {
@@ -40,8 +40,15 @@ const sendResetEmail = async (email, username, resetToken) => {
 
 }
 
+const sendVerificationEmail = async (email, username, token) => {
+  const subject = "Verify your email"
+  const html = verifyEmailTemplate(username, token)
+  return sendEmail(email, subject, html)
+}
+
 module.exports = {
   // sendEmail,
   sendWelcomeEmail,
+  sendVerificationEmail,
   sendResetEmail
 }

@@ -68,7 +68,8 @@ Check it is up: `curl http://localhost:5000/health`, then open **http://localhos
 | `ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated frontend origins (HTTP and Socket.IO) |
 | `AUTH_RATE_LIMIT_MAX` | `20` | Auth requests per IP per 15 minutes |
 | `EMAIL` / `PASSWORD` | – | Gmail address and app password; emails are skipped if unset |
-| `FRONTEND_URL` | `http://localhost:3000` | Base URL for password reset links |
+| `REQUIRE_EMAIL_VERIFICATION` | `false` | Block posting and commenting until the email is verified |
+| `FRONTEND_URL` | `http://localhost:3000` | Base URL for password reset and verification links |
 
 ## API
 

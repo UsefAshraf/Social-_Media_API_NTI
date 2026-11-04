@@ -8,8 +8,9 @@ const {
   createCommentSchema,
 } = require('../validators/post.validator');
 const { protect } = require('../../../shared/middleware/auth');
+const { requireVerified } = require('../../../shared/middleware/requireVerified');
 
-router.post('/', protect, validate(createPostSchema), postController.createPost);
+router.post('/', protect, requireVerified, validate(createPostSchema), postController.createPost);
 
 router.get('/', protect, postController.getPosts);
 
@@ -33,7 +34,7 @@ router.post('/:id/bookmark', protect, postController.bookmarkPost);
 
 router.delete('/:id/bookmark', protect, postController.unbookmarkPost);
 
-router.post('/:id/comments', protect, validate(createCommentSchema), postController.addComment);
+router.post('/:id/comments', protect, requireVerified, validate(createCommentSchema), postController.addComment);
 
 router.post('/:id/comments/:commentId/like', protect, postController.likeComment);
 

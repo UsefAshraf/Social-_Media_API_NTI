@@ -77,6 +77,24 @@ const submitNewPassword = async (req, res) => {
   }
 }
 
+const verifyEmail = asyncHandler(async (req, res) => {
+  await authService.verifyEmail(req.body.token);
+
+  res.status(200).json({
+    success: true,
+    message: 'Email verified',
+  });
+});
+
+const resendVerification = asyncHandler(async (req, res) => {
+  await authService.resendVerification(req.user._id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Verification email sent',
+  });
+});
+
 const logout = asyncHandler(async (req, res) => {
   await authService.logout(req.user._id);
   res.clearCookie(REFRESH_COOKIE, { ...refreshCookieOptions, maxAge: undefined });
@@ -93,5 +111,7 @@ module.exports = {
   refresh,
   logout,
   requestResetPassword,
-  submitNewPassword
+  submitNewPassword,
+  verifyEmail,
+  resendVerification,
 };
