@@ -16,6 +16,11 @@ const { getRedis, closeRedis } = require("./shared/config/redis");
 const { closeQueues } = require("./shared/queue/queues");
 const { startWorkers, stopWorkers } = require("./workers");
 const app = express();
+
+// number of proxies in front of the app, so req.ip is the real client
+if (process.env.TRUST_PROXY) {
+  app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+}
 const initializeSocketIO = require("./sockets/index");
 const swaggerUi = require("swagger-ui-express");
 const openApiSpec = require("./docs/openapi");

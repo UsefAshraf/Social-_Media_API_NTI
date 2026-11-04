@@ -4,10 +4,13 @@ const authService = require('../services/auth.service');
 
 const REFRESH_COOKIE = 'refreshToken';
 
+// SameSite=None (cross-site frontends) requires a Secure cookie
+const sameSite = process.env.COOKIE_SAMESITE || 'strict';
+
 const refreshCookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  secure: process.env.NODE_ENV === 'production' || sameSite === 'none',
+  sameSite,
   path: '/api/v2/auth',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
