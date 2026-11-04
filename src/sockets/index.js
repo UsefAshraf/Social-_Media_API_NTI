@@ -49,7 +49,8 @@ const initializeSocketIO = (server) => {
         next();
     });
 
-    resetPresence().catch((error) => console.log(error));
+    // with several instances sharing Redis, one restarting must not mark everyone offline
+    if (!pubClient) resetPresence().catch((error) => console.log(error));
 
     io.on("connection", (socket) => {
         log(`User connected ${socket.userId}`);
