@@ -22,7 +22,12 @@ const resolveReportSchema = Joi.object({
   action: Joi.string().valid('none', 'delete_content', 'ban_user').default('none'),
 });
 
+const banUserSchema = Joi.object({
+  banned: Joi.boolean().required(),
+});
+
 module.exports = {
   createReportSchema,
   resolveReportSchema,
+  banUserSchema,
 };
