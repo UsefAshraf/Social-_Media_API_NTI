@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY src ./src
+COPY scripts ./scripts
 
 # uploads are written here at runtime; mount a volume to keep them
 RUN mkdir -p uploads && chown -R node:node /app
