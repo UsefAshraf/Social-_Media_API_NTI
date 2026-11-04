@@ -283,8 +283,33 @@ const deleteComment = asyncHandler(async (req, res) => {
   });
 });
 
+const bookmarkPost = asyncHandler(async (req, res) => {
+  const post = await Post.exists({ _id: req.params.id });
+  if (!post) {
+    throw new ApiError(404, 'Post not found');
+  }
+
+  await User.updateOne({ _id: req.user._id }, { $addToSet: { bookmarks: post._id } });
+
+  res.status(200).json({
+    success: true,
+    message: 'Post saved',
+  });
+});
+
+const unbookmarkPost = asyncHandler(async (req, res) => {
+  await User.updateOne({ _id: req.user._id }, { $pull: { bookmarks: req.params.id } });
+
+  res.status(200).json({
+    success: true,
+    message: 'Post removed from saved',
+  });
+});
+
 module.exports = {
   createPost,
+  bookmarkPost,
+  unbookmarkPost,
   getPosts,
   getFeed,
   getUserPosts,

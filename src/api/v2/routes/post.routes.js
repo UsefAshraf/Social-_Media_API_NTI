@@ -27,6 +27,10 @@ router.delete('/:id', protect, postController.deletePost);
 
 router.post('/:id/like', protect, postController.likePost);
 
+router.post('/:id/bookmark', protect, postController.bookmarkPost);
+
+router.delete('/:id/bookmark', protect, postController.unbookmarkPost);
+
 router.post('/:id/comments', protect, validate(createCommentSchema), postController.addComment);
 
 router.delete('/:id/comments/:commentId', protect, postController.deleteComment);
