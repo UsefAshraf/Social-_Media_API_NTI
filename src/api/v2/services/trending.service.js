@@ -1,4 +1,5 @@
 const Post = require('../../../shared/models/Post');
+const { cached } = require('../../../shared/utils/cache');
 
 const HOUR = 60 * 60 * 1000;
 const clamp = (value, min, max, fallback) => Math.min(Math.max(Number(value) || fallback, min), max);
@@ -30,7 +31,7 @@ const trendingHashtags = ({ hours, limit } = {}) => {
   hours = clamp(hours, 1, 168, 24);
   limit = clamp(limit, 1, 50, 10);
 
-  return Post.aggregate([
+  return cached(`trending:hashtags:${hours}:${limit}`, 60, () => Post.aggregate([
     { $match: { createdAt: { $gte: new Date(Date.now() - hours * HOUR) }, 'hashtags.0': { $exists: true } } },
     { $unwind: '$hashtags' },
     { $group: { _id: '$hashtags', posts: { $sum: 1 }, authors: { $addToSet: '$author' } } },
@@ -38,7 +39,7 @@ const trendingHashtags = ({ hours, limit } = {}) => {
     { $project: { _id: 0, tag: '$_id', posts: 1, authors: { $size: '$authors' } } },
     { $sort: { authors: -1, posts: -1, tag: 1 } },
     { $limit: limit },
-  ]);
+  ]));
 };
 
 module.exports = {

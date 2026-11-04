@@ -6,6 +6,7 @@ const ApiError = require('../../../shared/utils/ApiError');
 const { parsePagination, paginationMeta } = require('../../../shared/utils/pagination');
 const postService = require('../services/post.service');
 const { findTargetAuthor } = require('../services/report.service');
+const { cached } = require('../../../shared/utils/cache');
 
 const setBanned = async (userId, banned) => {
   const user = await User.findById(userId).select('username role banned');
@@ -111,20 +112,23 @@ const banUser = asyncHandler(async (req, res) => {
 });
 
 const getStats = asyncHandler(async (req, res) => {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const stats = await cached('admin:stats', 30, async () => {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [users, bannedUsers, onlineUsers, posts, postsToday, openReports] = await Promise.all([
-    User.countDocuments(),
-    User.countDocuments({ banned: true }),
-    User.countDocuments({ status: 'online' }),
-    Post.countDocuments(),
-    Post.countDocuments({ createdAt: { $gte: since } }),
-    Report.countDocuments({ status: 'open' }),
-  ]);
+    const [users, bannedUsers, onlineUsers, posts, postsToday, openReports] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ banned: true }),
+      User.countDocuments({ status: 'online' }),
+      Post.countDocuments(),
+      Post.countDocuments({ createdAt: { $gte: since } }),
+      Report.countDocuments({ status: 'open' }),
+    ]);
+    return { users, bannedUsers, onlineUsers, posts, postsToday, openReports };
+  });
 
   res.status(200).json({
     success: true,
-    data: { users, bannedUsers, onlineUsers, posts, postsToday, openReports },
+    data: stats,
   });
 });
 
