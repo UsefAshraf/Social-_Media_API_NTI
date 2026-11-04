@@ -9,6 +9,7 @@ const {
 } = require('../validators/post.validator');
 const { protect } = require('../../../shared/middleware/auth');
 const { requireVerified } = require('../../../shared/middleware/requireVerified');
+const trendingController = require('../controllers/trending.controller');
 
 router.post('/', protect, requireVerified, validate(createPostSchema), postController.createPost);
 
@@ -17,6 +18,8 @@ router.get('/', protect, postController.getPosts);
 router.get('/feed', protect, postController.getFeed);
 
 router.get('/bookmarks', protect, postController.getBookmarks);
+
+router.get('/trending', protect, trendingController.getTrendingPosts);
 
 router.get('/user/:userId', protect, postController.getUserPosts);
 
