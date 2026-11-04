@@ -21,8 +21,10 @@ const swaggerUi = require("swagger-ui-express");
 const openApiSpec = require("./docs/openapi");
 const { logger } = require("./shared/utils/logger");
 const { requestLogger } = require("./shared/middleware/requestLogger");
+const { metricsMiddleware, metricsHandler } = require("./shared/metrics");
 
 app.use(requestLogger);
+app.use(metricsMiddleware);
 
 // allow frontends on other origins to load /uploads images
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
@@ -60,6 +62,8 @@ app.get("/health", (req, res) => {
     checks,
   });
 });
+
+app.get("/metrics", metricsHandler);
 
 app.get("/api-docs.json", (req, res) => res.json(openApiSpec));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));

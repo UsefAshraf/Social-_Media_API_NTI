@@ -6,6 +6,7 @@ const User = require("../shared/models/User");
 const { chatHandler } = require("./chatHandler");
 const { notificationHandler } = require("./notificationHandler");
 const { presenceHandler, resetPresence } = require("./presenceHandler");
+const { socketConnections } = require("../shared/metrics");
 const { log, logger } = require("../shared/utils/logger");
 
 const initializeSocketIO = (server) => {
@@ -53,6 +54,7 @@ const initializeSocketIO = (server) => {
     if (!pubClient) resetPresence().catch((error) => logger.error({ err: error }, "Failed to reset presence"));
 
     io.on("connection", (socket) => {
+        socketConnections.inc();
         log(`User connected ${socket.userId}`);
         socket.join(socket.userId.toString());
 
@@ -62,6 +64,7 @@ const initializeSocketIO = (server) => {
         presenceHandler(io, socket);
 
         socket.on("disconnect", () => {
+            socketConnections.dec();
             log(`User disconnected ${socket.userId}`);
         });
 
