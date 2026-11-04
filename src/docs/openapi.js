@@ -274,14 +274,36 @@ paths['/posts/{id}/comments'] = {
     summary: 'Comment on a post',
     security: bearer,
     parameters: [idParam('id', 'Post id')],
-    requestBody: json({ type: 'object', required: ['content'], properties: { content: { type: 'string', maxLength: 500 } } }),
+    description: 'Pass `parentId` to reply to a comment. Threads are one level deep.',
+    requestBody: json({
+      type: 'object',
+      required: ['content'],
+      properties: { content: { type: 'string', maxLength: 500 }, parentId: { type: 'string' } },
+    }),
     responses: { 201: ok('Updated post', onePost), 400: errors[400], 404: errors[404] },
+  },
+};
+paths['/posts/{id}/comments/{commentId}/like'] = {
+  post: {
+    tags: ['Posts'],
+    summary: 'Like or unlike a comment (toggle)',
+    security: bearer,
+    parameters: [idParam('id', 'Post id'), idParam('commentId', 'Comment id')],
+    responses: {
+      200: ok('New state', {
+        type: 'object',
+        properties: {
+          data: { type: 'object', properties: { liked: { type: 'boolean' }, likes: { type: 'integer' } } },
+        },
+      }),
+      404: errors[404],
+    },
   },
 };
 paths['/posts/{id}/comments/{commentId}'] = {
   delete: {
     tags: ['Posts'],
-    summary: 'Delete your comment',
+    summary: 'Delete your comment (and its replies)',
     security: bearer,
     parameters: [idParam('id', 'Post id'), idParam('commentId', 'Comment id')],
     responses: { 200: ok('Deleted'), 403: ok('Not the author', ref('Error')), 404: errors[404] },
@@ -516,6 +538,8 @@ module.exports = {
           _id: { type: 'string' },
           author: ref('UserSummary'),
           content: { type: 'string' },
+          parentId: { type: 'string', nullable: true },
+          likes: { type: 'array', items: { type: 'string' } },
           createdAt: { type: 'string', format: 'date-time' },
         },
       },

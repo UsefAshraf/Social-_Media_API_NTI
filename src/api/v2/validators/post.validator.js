@@ -41,6 +41,14 @@ const createCommentSchema = Joi.object({
       'string.max': 'Comment cannot exceed 500 characters',
       'any.required': 'Comment content is required',
     }),
+  parentId: Joi.string()
+    .hex()
+    .length(24)
+    .optional()
+    .messages({
+      'string.hex': 'parentId must be a comment id',
+      'string.length': 'parentId must be a comment id',
+    }),
 });
 
 module.exports = {
