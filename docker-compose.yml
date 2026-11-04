@@ -21,6 +21,9 @@ services:
   worker:
     build: .
     command: ["node", "src/worker.js"]
+    # no HTTP server here, so the image healthcheck on /health does not apply
+    healthcheck:
+      disable: true
     env_file: .env
     environment:
       MONGODB_URI: mongodb://mongo:27017/social-media-api
