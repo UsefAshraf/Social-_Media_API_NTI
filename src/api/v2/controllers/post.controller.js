@@ -219,7 +219,7 @@ const likePost = asyncHandler(async (req, res) => {
 });
 
 const addComment = asyncHandler(async (req, res) => {
-  const { content } = req.body;
+  const { content, parentId } = req.body;
 
   const post = await Post.findById(req.params.id);
 
@@ -227,12 +227,34 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Post not found');
   }
 
+  let parent = null;
+  if (parentId) {
+    parent = post.comments.id(parentId);
+    if (!parent) {
+      throw new ApiError(404, 'Parent comment not found');
+    }
+    // keep threads one level deep
+    if (parent.parentId) parent = post.comments.id(parent.parentId);
+  }
+
   post.comments.push({
     author: req.user._id,
     content,
+    parentId: parent ? parent._id : null,
   });
 
   await post.save();
+
+  if (parent) {
+    await notify(req.app.get('io'), {
+      recipient: parent.author,
+      sender: req.user._id,
+      type: 'comment',
+      content: `${req.user.username} replied: ${content.slice(0, 100)}`,
+      link: `/posts/${post._id}`,
+      relatedId: post._id,
+    });
+  }
 
   await notify(req.app.get('io'), {
     recipient: post.author,
