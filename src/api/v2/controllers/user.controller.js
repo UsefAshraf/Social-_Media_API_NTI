@@ -119,7 +119,53 @@ const listConnections = (field) =>
 const getFollowers = listConnections("followers");
 const getFollowing = listConnections("following");
 
+const blockUser = asyncHandler(async (req, res) => {
+  const me = req.user._id;
+
+  if (req.params.id === me.toString()) {
+    throw new ApiError(400, "You cannot block yourself");
+  }
+
+  const target = await User.findById(req.params.id).select("_id username");
+  if (!target) {
+    throw new ApiError(404, "User not found");
+  }
+
+  await User.updateOne(
+    { _id: me },
+    { $addToSet: { blocked: target._id }, $pull: { following: target._id, followers: target._id } }
+  );
+  await User.updateOne({ _id: target._id }, { $pull: { following: me, followers: me } });
+
+  res.status(200).json({
+    success: true,
+    message: `You blocked ${target.username}`,
+  });
+});
+
+const unblockUser = asyncHandler(async (req, res) => {
+  await User.updateOne({ _id: req.user._id }, { $pull: { blocked: req.params.id } });
+
+  res.status(200).json({
+    success: true,
+    message: "User unblocked",
+  });
+});
+
+const getBlocked = asyncHandler(async (req, res) => {
+  const me = await User.findById(req.user._id).select("+blocked").populate("blocked", "username avatar");
+
+  res.status(200).json({
+    success: true,
+    count: me.blocked.length,
+    data: me.blocked,
+  });
+});
+
 module.exports = {
+  blockUser,
+  unblockUser,
+  getBlocked,
   getProfile,
   getFollowers,
   getFollowing,
