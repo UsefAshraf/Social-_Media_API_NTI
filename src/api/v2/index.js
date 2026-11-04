@@ -9,6 +9,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const searchRoutes = require('./routes/search.routes');
 const reportRoutes = require('./routes/report.routes');
 const adminRoutes = require('./routes/admin.routes');
+const hashtagRoutes = require('./routes/hashtag.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -18,5 +19,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/search', searchRoutes);
 router.use('/reports', reportRoutes);
 router.use('/admin', adminRoutes);
+router.use('/hashtags', hashtagRoutes);
 
 module.exports = router;
