@@ -13,7 +13,8 @@ const listPosts = async (filter, query) => {
     .populate('comments.author', 'username avatar')
     .sort({ createdAt: -1, _id: -1 })
     .skip(useCursor ? 0 : paging.skip)
-    .limit(paging.limit + 1); // one extra to know if there is a next page
+    .limit(paging.limit + 1) // one extra to know if there is a next page
+    .lean(); // plain objects: same JSON, much cheaper than full documents
 
   const hasMore = posts.length > paging.limit;
   const page = posts.slice(0, paging.limit);

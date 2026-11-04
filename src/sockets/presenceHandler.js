@@ -1,4 +1,5 @@
 const User = require("../shared/models/User");
+const { logger } = require("../shared/utils/logger");
 
 const setStatus = async (io, userId, status) => {
     const lastSeen = new Date();
@@ -35,7 +36,7 @@ const presenceHandler = async (io, socket) => {
             if (typeof ack === "function") ack(result);
             else socket.emit("presence:query", result);
         } catch (error) {
-            console.log(error);
+            logger.error({ err: error, userId }, "presence:query failed");
             socket.emit("presence:error", { message: "Failed to load presence" });
         }
     });
@@ -46,7 +47,7 @@ const presenceHandler = async (io, socket) => {
             const remaining = await io.in(userId).fetchSockets();
             if (!remaining.length) await setStatus(io, userId, "offline");
         } catch (error) {
-            console.log(error);
+            logger.error({ err: error, userId }, "Failed to update presence on disconnect");
         }
     });
 
@@ -55,7 +56,7 @@ const presenceHandler = async (io, socket) => {
         const sockets = await io.in(userId).fetchSockets();
         if (sockets.length === 1) await setStatus(io, userId, "online");
     } catch (error) {
-        console.log(error);
+        logger.error({ err: error, userId }, "Failed to update presence on connect");
     }
 };
 

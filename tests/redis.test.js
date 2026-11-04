@@ -7,7 +7,8 @@ const { io: connect } = require('socket.io-client');
 const initializeSocketIO = require('../src/sockets');
 const { getRedis, closeRedis } = require('../src/shared/config/redis');
 const { cached } = require('../src/shared/utils/cache');
-const { api, registerUser } = require('./helpers');
+// loading the app queues DB work that would keep a skipped run alive, so only load it when needed
+const { api, registerUser } = url ? require('./helpers') : {};
 
 const describeWithRedis = url ? describe : describe.skip;
 

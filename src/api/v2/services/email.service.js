@@ -2,12 +2,12 @@ const nodemailer = require("nodemailer")
 const { createTransporter } = require("../../../shared/config/nodemailerConfig")
 const { welcomeEmailTemplate, passwordResetEmail, verifyEmailTemplate } = require("../../../shared/utils/emailTemplates")
 const { getQueue } = require("../../../shared/queue/queues")
-const { log } = require("../../../shared/utils/logger")
+const { log, logger } = require("../../../shared/utils/logger")
 
 // Send through SMTP now; throws on failure so queued jobs can retry
 const deliverEmail = async ({ to, subject, html }) => {
   if (!process.env.EMAIL || !process.env.PASSWORD) {
-    if (process.env.NODE_ENV !== "test") console.warn(`EMAIL/PASSWORD not set, skipping email: ${subject}`)
+    logger.warn({ subject }, "EMAIL/PASSWORD not set, skipping email")
     return null
   }
   const transporter = createTransporter()
@@ -39,7 +39,7 @@ const sendEmail = async (to, subject, html) => {
     }
     return await deliverEmail({ to, subject, html })
   } catch (error) {
-    console.error("error sending email", error)
+    logger.error({ err: error, subject }, "error sending email")
     return null
   }
 }
