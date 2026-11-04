@@ -162,7 +162,23 @@ npm run test:coverage    # ~83% line coverage
 
 The suite covers auth flows (including token rotation and logout), post permissions, uploads, follows and the feed, notification scoping, Socket.IO chat, live notifications and presence. It also fails if any route is missing from the OpenAPI spec.
 
-## Author
+## Load testing
+
+[k6](https://k6.io) scripts live in `loadtest/`: `npm run loadtest` simulates users scrolling the feed, liking, posting and checking trends, and `npm run loadtest:stress` ramps feed requests until latency degrades. Without k6 installed, use Docker:
+
+```bash
+docker run --rm -v "$PWD/loadtest:/scripts" -e BASE_URL=http://host.docker.internal:5000 grafana/k6 run /scripts/feed.js
+```
+
+Measured against `docker compose` (1 API container, 1 worker, MongoDB, Redis) on a laptop:
+
+| Scenario | Result |
+|---|---|
+| Browsing, ramping to 50 users (2,595 requests) | 0% errors, p95 21 ms for the feed, 24 ms for likes, 14 ms for new posts |
+| Feed stress test, ramping to 600 req/s | about 240 req/s sustained per API instance with 0 errors. Switching the feed to lean queries raised this from about 188 req/s (+29%) |
+
+Throughput scales horizontally: with Redis configured, extra API instances share sockets, rate limits and queues.
+
 
 **Yousef Ashraf Abdelmoez**: [GitHub](https://github.com/UsefAshraf)
 

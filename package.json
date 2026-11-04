@@ -8,6 +8,8 @@
     "dev": "nodemon src/app.js",
     "worker": "node src/worker.js",
     "make-admin": "node scripts/make-admin.js",
+    "loadtest": "k6 run loadtest/feed.js",
+    "loadtest:stress": "k6 run loadtest/stress.js",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage"
   },
