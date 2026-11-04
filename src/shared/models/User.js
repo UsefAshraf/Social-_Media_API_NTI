@@ -36,6 +36,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false,
     },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+    },
+    banned: {
+      type: Boolean,
+      default: false,
+    },
     emailVerified: {
       type: Boolean,
       default: false,
