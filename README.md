@@ -68,6 +68,8 @@ Check it is up: `curl http://localhost:5000/health`, then open **http://localhos
 | `ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated frontend origins (HTTP and Socket.IO) |
 | `AUTH_RATE_LIMIT_MAX` | `20` | Auth requests per IP per 15 minutes |
 | `REDIS_URL` | – | Optional. Enables the Socket.IO Redis adapter (multiple instances), shared rate limits, caching and background job queues |
+| `LOG_LEVEL` | `info` | pino log level (`silent` in tests) |
+| `METRICS_TOKEN` | – | If set, `/metrics` requires `Authorization: Bearer <token>` |
 | `RUN_WORKERS` | `true` | With Redis, run queue workers inside the API. Set `false` when using `npm run worker` |
 | `EMAIL` / `PASSWORD` | – | Gmail address and app password; emails are skipped if unset |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` | Block posting and commenting until the email is verified |
@@ -138,6 +140,7 @@ Some design decisions:
 - **Chat rooms** are deterministic (`sortedUserIdA_sortedUserIdB`), and messages also go to the receiver's personal room, so they arrive even with the chat closed.
 - **Horizontal scaling**: with `REDIS_URL` set, Socket.IO uses the Redis adapter, so users on different instances can chat and get notifications. Presence comes from the live sockets in each user's room across all instances (`fetchSockets()`), so closing one of several tabs doesn't mark you offline. Rate limits and caches are shared too. Without Redis it runs as a single instance.
 - **Background jobs (BullMQ)**: emails are queued and retried with exponential backoff, uploads are converted to WebP (1280px, plus 320px thumbnails for posts) by sharp, and read notifications older than 90 days are cleaned up nightly. Workers run in the API or in their own container (`npm run worker`). Without Redis the same work runs inline.
+- **Observability**: structured JSON logs (pino) with a request id on every request (`X-Request-Id`, also returned in error bodies), and Prometheus metrics at `/metrics` covering HTTP latency by route, open sockets and Node.js runtime stats.
 - **A failed notification or email never fails the request** that triggered it.
 
 ## Testing

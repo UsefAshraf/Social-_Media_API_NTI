@@ -19,6 +19,12 @@ const app = express();
 const initializeSocketIO = require("./sockets/index");
 const swaggerUi = require("swagger-ui-express");
 const openApiSpec = require("./docs/openapi");
+const { logger } = require("./shared/utils/logger");
+const { requestLogger } = require("./shared/middleware/requestLogger");
+const { metricsMiddleware, metricsHandler } = require("./shared/metrics");
+
+app.use(requestLogger);
+app.use(metricsMiddleware);
 
 // allow frontends on other origins to load /uploads images
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
@@ -57,6 +63,8 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.get("/metrics", metricsHandler);
+
 app.get("/api-docs.json", (req, res) => res.json(openApiSpec));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
@@ -82,25 +90,20 @@ const startServer = async () => {
     // run queue workers in this process unless a separate worker handles them
     if (getRedis() && process.env.RUN_WORKERS !== "false") {
       workers = await startWorkers();
-      console.log("Queue workers started");
+      logger.info("Queue workers started");
     }
 
     server.listen(PORT, () => {
-      console.log(
-        `Server running in ${
-          process.env.NODE_ENV || "development"
-        } mode on port ${PORT}`
-      );
+      logger.info({ port: PORT, env: process.env.NODE_ENV || "development" }, "Server listening (HTTP + Socket.IO)");
     });
-    console.log(`Socket.io server running on port ${PORT}`);
   } catch (error) {
-    console.error("Failed to start server:", error);
+    logger.fatal({ err: error }, "Failed to start server");
     process.exit(1);
   }
 };
 
 const shutdown = (signal) => {
-  console.log(`${signal} received, shutting down`);
+  logger.info({ signal }, "Shutting down");
   io.close();
   server.close(async () => {
     await stopWorkers(workers);
