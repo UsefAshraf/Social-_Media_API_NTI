@@ -5,6 +5,13 @@ const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 const { notify } = require('../services/notification.service');
 const { resolveMentions, notifyMentions } = require('../services/mention.service');
+const { hiddenUserIds, isBlockedBetween } = require('../services/block.service');
+
+const assertNotBlocked = async (userId, post) => {
+  if (await isBlockedBetween(userId, post.author)) {
+    throw new ApiError(403, 'You cannot interact with this post');
+  }
+};
 const { parsePagination, paginationMeta } = require('../../../shared/utils/pagination');
 
 const createPost = asyncHandler(async (req, res) => {
@@ -32,15 +39,16 @@ const createPost = asyncHandler(async (req, res) => {
 
 const getPosts = asyncHandler(async (req, res) => {
   const paging = parsePagination(req.query);
+  const filter = { author: { $nin: await hiddenUserIds(req.user._id) } };
 
-  const posts = await Post.find()
+  const posts = await Post.find(filter)
     .populate('author', 'username avatar')
     .populate('comments.author', 'username avatar')
     .sort({ createdAt: -1 })
     .skip(paging.skip)
     .limit(paging.limit);
 
-  const total = await Post.countDocuments();
+  const total = await Post.countDocuments(filter);
 
   res.status(200).json({
     success: true,
@@ -75,6 +83,10 @@ const getUserPosts = asyncHandler(async (req, res) => {
   const paging = parsePagination(req.query);
   const filter = { author: req.params.userId };
 
+  if (await isBlockedBetween(req.user._id, req.params.userId)) {
+    throw new ApiError(404, 'User not found');
+  }
+
   const posts = await Post.find(filter)
     .populate("author", "username avatar")
     .sort({ createdAt: -1 })
@@ -92,7 +104,10 @@ const getUserPosts = asyncHandler(async (req, res) => {
 
 const getPostsByHashtag = asyncHandler(async (req, res) => {
   const paging = parsePagination(req.query);
-  const filter = { hashtags: req.params.tag.replace(/^#/, '').toLowerCase() };
+  const filter = {
+    hashtags: req.params.tag.replace(/^#/, '').toLowerCase(),
+    author: { $nin: await hiddenUserIds(req.user._id) },
+  };
 
   const posts = await Post.find(filter)
     .populate('author', 'username avatar')
@@ -114,7 +129,7 @@ const getPost = asyncHandler(async (req, res) => {
     .populate('author', 'username avatar')
     .populate('comments.author', 'username avatar');
 
-  if (!post) {
+  if (!post || (await isBlockedBetween(req.user._id, post.author._id))) {
     throw new ApiError(404, 'Post not found');
   }
 
@@ -189,6 +204,8 @@ const likePost = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Post not found');
   }
 
+  await assertNotBlocked(req.user._id, post);
+
   const likeIndex = post.likes.indexOf(req.user._id);
 
   const liked = likeIndex === -1;
@@ -226,6 +243,8 @@ const addComment = asyncHandler(async (req, res) => {
   if (!post) {
     throw new ApiError(404, 'Post not found');
   }
+
+  await assertNotBlocked(req.user._id, post);
 
   let parent = null;
   if (parentId) {
