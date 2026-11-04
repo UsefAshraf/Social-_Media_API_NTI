@@ -13,6 +13,8 @@ const path = require("path");
 const http = require("http");
 const mongoose = require("mongoose");
 const { getRedis, closeRedis } = require("./shared/config/redis");
+const { closeQueues } = require("./shared/queue/queues");
+const { startWorkers, stopWorkers } = require("./workers");
 const app = express();
 const initializeSocketIO = require("./sockets/index");
 const swaggerUi = require("swagger-ui-express");
@@ -71,9 +73,17 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+let workers = [];
+
 const startServer = async () => {
   try {
     await connectDB();
+
+    // run queue workers in this process unless a separate worker handles them
+    if (getRedis() && process.env.RUN_WORKERS !== "false") {
+      workers = await startWorkers();
+      console.log("Queue workers started");
+    }
 
     server.listen(PORT, () => {
       console.log(
@@ -93,6 +103,8 @@ const shutdown = (signal) => {
   console.log(`${signal} received, shutting down`);
   io.close();
   server.close(async () => {
+    await stopWorkers(workers);
+    await closeQueues();
     await Promise.all([mongoose.connection.close(), closeRedis()]);
     process.exit(0);
   });
