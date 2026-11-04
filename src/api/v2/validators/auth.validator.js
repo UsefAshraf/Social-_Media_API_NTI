@@ -54,7 +54,16 @@ const loginSchema = Joi.object({
   })
 })
 
+const verifyEmailSchema = Joi.object({
+  token: Joi.string().hex().length(64).required().messages({
+    'any.required': 'Verification token is required',
+    'string.hex': 'Invalid verification token',
+    'string.length': 'Invalid verification token',
+  }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
+  verifyEmailSchema,
 };

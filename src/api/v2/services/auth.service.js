@@ -153,6 +153,30 @@ const submitNewPassword = async (token, newPassword) => {
 }
 
 
+const verifyEmail = async (token) => {
+  const user = await User.findOne({
+    verifyToken: hashToken(String(token)),
+    verifyTokenExpiration: { $gt: Date.now() },
+  })
+
+  if (!user) {
+    throw new ApiError(400, 'Invalid or expired verification token');
+  }
+
+  user.emailVerified = true
+  user.verifyToken = undefined
+  user.verifyTokenExpiration = undefined
+  await user.save()
+}
+
+const resendVerification = async (userId) => {
+  const user = await User.findById(userId)
+  if (user.emailVerified) {
+    throw new ApiError(400, 'Email is already verified');
+  }
+  await sendVerification(user)
+}
+
 const logout = async (userId) => {
   await User.findByIdAndUpdate(userId, { refreshToken: null });
 };
@@ -163,5 +187,7 @@ module.exports = {
   refreshAccessToken,
   logout,
   resetPassword,
-  submitNewPassword
+  submitNewPassword,
+  verifyEmail,
+  resendVerification,
 };

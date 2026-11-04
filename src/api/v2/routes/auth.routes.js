@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const validate = require('../../../shared/middleware/validate');
-const { registerSchema, loginSchema } = require('../validators/auth.validator');
+const { registerSchema, loginSchema, verifyEmailSchema } = require('../validators/auth.validator');
 const { protect } = require('../../../shared/middleware/auth');
 const { authLimiter } = require('../../../shared/middleware/rateLimiter');
 
@@ -13,6 +13,10 @@ router.post('/login', authLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', authLimiter, authController.refresh);
 
 router.post('/logout', protect, authController.logout);
+
+router.post('/verify-email', authLimiter, validate(verifyEmailSchema), authController.verifyEmail);
+
+router.post('/resend-verification', protect, authLimiter, authController.resendVerification);
 
 router.get("/reset", authLimiter, authController.requestResetPassword)
 
