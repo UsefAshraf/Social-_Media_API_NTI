@@ -74,6 +74,9 @@ const postSchema = new mongoose.Schema(
 );
 
 postSchema.index({ content: 'text' });
+// newest-first listings, overall and per author (feed, profile)
+postSchema.index({ createdAt: -1, _id: -1 });
+postSchema.index({ author: 1, createdAt: -1, _id: -1 });
 
 postSchema.pre('validate', function (next) {
   if (this.isModified('content')) {
