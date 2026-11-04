@@ -174,6 +174,7 @@ const deletePost = asyncHandler(async (req, res) => {
 
   await post.deleteOne();
   await removeUpload(post.image);
+  await User.updateMany({ bookmarks: post._id }, { $pull: { bookmarks: post._id } });
 
   res.status(200).json({
     success: true,
