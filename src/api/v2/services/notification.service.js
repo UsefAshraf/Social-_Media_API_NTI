@@ -1,4 +1,5 @@
 const Notification = require("../../../shared/models/Notification");
+const { isBlockedBetween } = require("./block.service");
 
 const populateFields = [
     { path: "sender", select: "username avatar" },
@@ -17,6 +18,8 @@ exports.notify = async (io, { recipient, sender, type, content, link = null, rel
     if (recipient.toString() === sender.toString()) return null;
 
     try {
+        if (await isBlockedBetween(recipient, sender)) return null;
+
         const notification = await exports.createNotification({ recipient, sender, type, content, link, relatedId });
         if (io) io.to(recipient.toString()).emit("notification:new", notification);
         return notification;

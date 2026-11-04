@@ -3,13 +3,14 @@ const asyncHandler = require('../../../shared/utils/asyncHandler');
 const ApiError = require('../../../shared/utils/ApiError');
 const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 const { notify } = require('../services/notification.service');
+const { isBlockedBetween } = require('../services/block.service');
 
 const getProfile = asyncHandler(async (req, res) => {
   const userId = req.params.id || req.user._id;
 
   const user = await User.findById(userId).select('-password -refreshToken');
 
-  if (!user) {
+  if (!user || (req.params.id && (await isBlockedBetween(req.user._id, user._id)))) {
     throw new ApiError(404, 'User not found');
   }
 
@@ -59,6 +60,10 @@ const followUser = asyncHandler(async (req, res) => {
   const target = await User.findById(targetId);
   if (!target) {
     throw new ApiError(404, "User not found");
+  }
+
+  if (await isBlockedBetween(req.user._id, target._id)) {
+    throw new ApiError(403, "You cannot follow this user");
   }
 
   const { modifiedCount } = await User.updateOne(
