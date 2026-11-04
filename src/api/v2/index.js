@@ -11,6 +11,18 @@ const reportRoutes = require('./routes/report.routes');
 const adminRoutes = require('./routes/admin.routes');
 const hashtagRoutes = require('./routes/hashtag.routes');
 
+// index of the API, for anyone opening /api/v2 directly
+router.get('/', (req, res) => {
+  res.json({
+    success: true,
+    name: 'Social Media API',
+    version: 'v2',
+    docs: '/api-docs',
+    health: '/health',
+    resources: ['/auth', '/users', '/posts', '/messages', '/notifications', '/search', '/hashtags', '/reports', '/admin'],
+  });
+});
+
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/posts', postRoutes);

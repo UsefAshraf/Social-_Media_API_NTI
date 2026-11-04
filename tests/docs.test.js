@@ -27,6 +27,15 @@ describe('api docs', () => {
     expect(spec.body.openapi).toBe('3.0.3');
   });
 
+  it('redirects / to the docs and describes /api/v2', async () => {
+    const root = await api().get('/');
+    expect(root.status).toBe(302);
+    expect(root.headers.location).toBe('/api-docs');
+
+    const index = await api().get('/api/v2');
+    expect(index.body).toMatchObject({ success: true, version: 'v2', docs: '/api-docs' });
+  });
+
   it('documents every mounted route', async () => {
     const { body: spec } = await api().get('/api-docs.json');
     const documented = Object.entries(spec.paths).flatMap(([p, ops]) => Object.keys(ops).map((m) => `${m} ${p}`));
