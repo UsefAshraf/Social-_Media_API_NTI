@@ -1,4 +1,6 @@
 const socketIO = require("socket.io");
+const { createAdapter } = require("@socket.io/redis-adapter");
+const { createRedisClient } = require("../shared/config/redis");
 const { verifyAccessToken } = require("../shared/utils/tokens");
 const User = require("../shared/models/User");
 const { chatHandler } = require("./chatHandler");
@@ -14,6 +16,11 @@ const initializeSocketIO = (server) => {
             credentials: true,
         },
     });
+
+    const pubClient = createRedisClient();
+    if (pubClient) {
+        io.adapter(createAdapter(pubClient, createRedisClient()));
+    }
 
     // Auth middleware
     io.use(async (socket, next) => {
@@ -37,6 +44,8 @@ const initializeSocketIO = (server) => {
         }
 
         socket.userId = decoded.userId;
+        // socket.data is visible to other instances via fetchSockets()
+        socket.data.userId = decoded.userId;
         next();
     });
 
