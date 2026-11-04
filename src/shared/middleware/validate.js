@@ -1,8 +1,9 @@
 const ApiError = require('../utils/ApiError');
 
-const validate = (schema) => {
+// source: which part of the request to validate ('body' or 'query')
+const validate = (schema, source = 'body') => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body, { abortEarly: false });
+    const { error } = schema.validate(req[source], { abortEarly: false });
 
     if (error) {
       const message = error.details.map((detail) => detail.message).join(', ');
