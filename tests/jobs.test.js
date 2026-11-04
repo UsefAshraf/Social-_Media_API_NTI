@@ -7,7 +7,8 @@ const emailService = require('../src/api/v2/services/email.service');
 const { startWorkers, stopWorkers } = require('../src/workers');
 const { getQueue, closeQueues } = require('../src/shared/queue/queues');
 const { getRedis, closeRedis } = require('../src/shared/config/redis');
-const { api, registerUser } = require('./helpers');
+// loading the app queues DB work that would keep a skipped run alive, so only load it when needed
+const { api, registerUser } = url ? require('./helpers') : {};
 
 const describeWithRedis = url ? describe : describe.skip;
 
