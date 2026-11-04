@@ -283,6 +283,24 @@ const deleteComment = asyncHandler(async (req, res) => {
   });
 });
 
+const getBookmarks = asyncHandler(async (req, res) => {
+  const paging = parsePagination(req.query);
+  const me = await User.findById(req.user._id).select('+bookmarks');
+
+  // bookmarks are appended, so the newest saves are at the end
+  const ids = [...me.bookmarks].reverse();
+  const pageIds = ids.slice(paging.skip, paging.skip + paging.limit);
+
+  const posts = await Post.find({ _id: { $in: pageIds } }).populate('author', 'username avatar');
+  const byId = new Map(posts.map((p) => [p._id.toString(), p]));
+
+  res.status(200).json({
+    success: true,
+    data: pageIds.map((id) => byId.get(id.toString())).filter(Boolean),
+    pagination: paginationMeta(paging, ids.length),
+  });
+});
+
 const bookmarkPost = asyncHandler(async (req, res) => {
   const post = await Post.exists({ _id: req.params.id });
   if (!post) {
@@ -308,6 +326,7 @@ const unbookmarkPost = asyncHandler(async (req, res) => {
 
 module.exports = {
   createPost,
+  getBookmarks,
   bookmarkPost,
   unbookmarkPost,
   getPosts,

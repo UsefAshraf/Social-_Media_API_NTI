@@ -15,6 +15,8 @@ router.get('/', protect, postController.getPosts);
 
 router.get('/feed', protect, postController.getFeed);
 
+router.get('/bookmarks', protect, postController.getBookmarks);
+
 router.get('/user/:userId', protect, postController.getUserPosts);
 
 router.get('/hashtag/:tag', protect, postController.getPostsByHashtag);
