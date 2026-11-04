@@ -493,6 +493,112 @@ paths['/search'] = {
   },
 };
 
+// --- Reports
+paths['/reports'] = {
+  post: {
+    tags: ['Reports'],
+    summary: 'Report a post, comment or user',
+    description: '`postId` is required when reporting a comment. Each user can report a target once.',
+    security: bearer,
+    requestBody: json({
+      type: 'object',
+      required: ['targetType', 'targetId', 'reason'],
+      properties: {
+        targetType: { type: 'string', enum: ['post', 'comment', 'user'] },
+        targetId: { type: 'string' },
+        postId: { type: 'string' },
+        reason: { type: 'string', enum: ['spam', 'harassment', 'hate', 'nudity', 'violence', 'misinformation', 'other'] },
+        details: { type: 'string', maxLength: 500 },
+      },
+    }),
+    responses: {
+      201: ok('Report created'),
+      400: errors[400],
+      404: errors[404],
+      409: ok('Already reported', ref('Error')),
+    },
+  },
+};
+
+// --- Admin
+const adminOnly = { 403: ok('Admins only', ref('Error')) };
+paths['/admin/stats'] = {
+  get: {
+    tags: ['Admin'],
+    summary: 'Platform counters',
+    security: bearer,
+    responses: {
+      200: ok('Stats', {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'object',
+            properties: {
+              users: { type: 'integer' },
+              bannedUsers: { type: 'integer' },
+              onlineUsers: { type: 'integer' },
+              posts: { type: 'integer' },
+              postsToday: { type: 'integer' },
+              openReports: { type: 'integer' },
+            },
+          },
+        },
+      }),
+      ...adminOnly,
+    },
+  },
+};
+paths['/admin/reports'] = {
+  get: {
+    tags: ['Admin'],
+    summary: 'Reports queue',
+    security: bearer,
+    parameters: [
+      { name: 'status', in: 'query', schema: { type: 'string', enum: ['open', 'resolved', 'dismissed'], default: 'open' } },
+      ...pageParams,
+    ],
+    responses: { 200: ok('Page of reports'), ...adminOnly },
+  },
+};
+paths['/admin/reports/{id}'] = {
+  patch: {
+    tags: ['Admin'],
+    summary: 'Resolve or dismiss a report',
+    description: 'When resolving, `action` can delete the reported post/comment or ban its author.',
+    security: bearer,
+    parameters: [idParam('id', 'Report id')],
+    requestBody: json({
+      type: 'object',
+      required: ['status'],
+      properties: {
+        status: { type: 'string', enum: ['resolved', 'dismissed'] },
+        action: { type: 'string', enum: ['none', 'delete_content', 'ban_user'], default: 'none' },
+      },
+    }),
+    responses: { 200: ok('Updated report'), 400: errors[400], 404: errors[404], ...adminOnly },
+  },
+};
+paths['/admin/posts/{id}'] = {
+  delete: {
+    tags: ['Admin'],
+    summary: 'Delete any post',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    responses: { 200: ok('Deleted'), 404: errors[404], ...adminOnly },
+  },
+};
+paths['/admin/users/{id}/ban'] = {
+  patch: {
+    tags: ['Admin'],
+    summary: 'Ban or unban a user',
+    description: 'Banned users are logged out and get 403 on every request.',
+    security: bearer,
+    parameters: [idParam('id', 'User id')],
+    requestBody: json({ type: 'object', required: ['banned'], properties: { banned: { type: 'boolean' } } }),
+    responses: { 200: ok('Updated user'), 400: errors[400], 404: errors[404], ...adminOnly },
+  },
+};
+
 module.exports = {
   openapi: '3.0.3',
   info: {
@@ -523,6 +629,8 @@ module.exports = {
     { name: 'Messages' },
     { name: 'Notifications' },
     { name: 'Search' },
+    { name: 'Reports' },
+    { name: 'Admin', description: 'Requires role admin (`npm run make-admin -- <email>`)' },
   ],
   components: {
     securitySchemes: {
