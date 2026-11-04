@@ -20,6 +20,9 @@ const initializeSocketIO = require("./sockets/index");
 const swaggerUi = require("swagger-ui-express");
 const openApiSpec = require("./docs/openapi");
 const { logger } = require("./shared/utils/logger");
+const { requestLogger } = require("./shared/middleware/requestLogger");
+
+app.use(requestLogger);
 
 // allow frontends on other origins to load /uploads images
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));

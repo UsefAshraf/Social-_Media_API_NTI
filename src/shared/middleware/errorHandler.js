@@ -1,5 +1,6 @@
 const ApiError = require('../utils/ApiError');
 const { fileUrl, removeUpload } = require('../utils/files');
+const { logger } = require('../utils/logger');
 
 const errorHandler = (err, req, res, next) => {
   // a failed request should not leave its uploaded file behind
@@ -43,9 +44,14 @@ const errorHandler = (err, req, res, next) => {
     error = new ApiError(401, message);
   }
 
+  if (error.statusCode >= 500) {
+    (req.log || logger).error({ err }, 'Unhandled error');
+  }
+
   res.status(error.statusCode).json({
     success: false,
     error: error.message || 'Server Error',
+    requestId: req.id,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
