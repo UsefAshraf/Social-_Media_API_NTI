@@ -8,6 +8,26 @@ services:
       PORT: 5000
       MONGODB_URI: mongodb://mongo:27017/social-media-api
       REDIS_URL: redis://redis:6379
+      RUN_WORKERS: "false"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: ["node", "src/worker.js"]
+    # no HTTP server here, so the image healthcheck on /health does not apply
+    healthcheck:
+      disable: true
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/social-media-api
+      REDIS_URL: redis://redis:6379
     volumes:
       - uploads:/app/uploads
     depends_on:

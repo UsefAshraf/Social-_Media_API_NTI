@@ -58,6 +58,15 @@ exports.markNotificationAsRead = async (notificationId, recipient) => {
     );
 }
 
+// Read notifications older than `days`; run nightly by the maintenance queue
+exports.cleanupNotifications = async (days = 90) => {
+    const { deletedCount } = await Notification.deleteMany({
+        read: true,
+        createdAt: { $lt: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+    });
+    return { deleted: deletedCount };
+}
+
 exports.markAllNotificationsAsRead = async (recipient) => {
     return Notification.updateMany({ recipient, read: false }, { read: true });
 }

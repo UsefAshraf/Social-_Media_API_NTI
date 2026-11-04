@@ -4,9 +4,9 @@ let client = null;
 let closing = false;
 const clients = [];
 
-const connect = () => {
+const connect = (options = {}) => {
   closing = false;
-  const redis = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 3 });
+  const redis = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 3, ...options });
   // connections being shut down can report resets; ignore those
   redis.on('error', (error) => closing || console.error('Redis error:', error.message));
   clients.push(redis);
@@ -20,8 +20,8 @@ const getRedis = () => {
   return client;
 };
 
-// Extra dedicated connection, e.g. for pub/sub
-const createRedisClient = () => (process.env.REDIS_URL ? connect() : null);
+// Extra dedicated connection, e.g. for pub/sub or BullMQ
+const createRedisClient = (options) => (process.env.REDIS_URL ? connect(options) : null);
 
 const closeRedis = async () => {
   closing = true;
