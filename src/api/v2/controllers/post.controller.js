@@ -6,6 +6,7 @@ const { fileUrl, removeUpload } = require('../../../shared/utils/files');
 const { notify } = require('../services/notification.service');
 const { resolveMentions, notifyMentions } = require('../services/mention.service');
 const { hiddenUserIds, isBlockedBetween } = require('../services/block.service');
+const postService = require('../services/post.service');
 
 const assertNotBlocked = async (userId, post) => {
   if (await isBlockedBetween(userId, post.author)) {
@@ -187,9 +188,7 @@ const deletePost = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Not authorized to delete this post');
   }
 
-  await post.deleteOne();
-  await removeUpload(post.image);
-  await User.updateMany({ bookmarks: post._id }, { $pull: { bookmarks: post._id } });
+  await postService.deletePost(post);
 
   res.status(200).json({
     success: true,
@@ -350,10 +349,7 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Not authorized to delete this comment');
   }
 
-  post.comments.pull(
-    ...post.comments.filter((c) => c._id.equals(comment._id) || (c.parentId && c.parentId.equals(comment._id)))
-  );
-  await post.save();
+  await postService.deleteComment(post, comment._id);
 
   res.status(200).json({
     success: true,

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "make-admin": "node scripts/make-admin.js",
     "test": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage"
   },

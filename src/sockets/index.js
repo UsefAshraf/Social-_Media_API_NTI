@@ -1,5 +1,6 @@
 const socketIO = require("socket.io");
 const { verifyAccessToken } = require("../shared/utils/tokens");
+const User = require("../shared/models/User");
 const { chatHandler } = require("./chatHandler");
 const { notificationHandler } = require("./notificationHandler");
 const { presenceHandler, resetPresence } = require("./presenceHandler");
@@ -15,7 +16,8 @@ const initializeSocketIO = (server) => {
     });
 
     // Auth middleware
-    io.use((socket, next) => {
+    io.use(async (socket, next) => {
+        let decoded;
         try {
             const token = socket.handshake.auth?.token ||
                           socket.handshake.headers.authorization?.split(" ")[1];
@@ -24,12 +26,18 @@ const initializeSocketIO = (server) => {
                 return next(new Error("Auth Error: token not provided"));
             }
 
-            const decoded = verifyAccessToken(token);
-            socket.userId = decoded.userId;
-            next();
+            decoded = verifyAccessToken(token);
         } catch (error) {
-            next(new Error("Auth error: Invalid token"));
+            return next(new Error("Auth error: Invalid token"));
         }
+
+        const user = await User.findById(decoded.userId).select("banned").catch(() => null);
+        if (!user || user.banned) {
+            return next(new Error("Auth error: Account unavailable"));
+        }
+
+        socket.userId = decoded.userId;
+        next();
     });
 
     resetPresence().catch((error) => console.log(error));
