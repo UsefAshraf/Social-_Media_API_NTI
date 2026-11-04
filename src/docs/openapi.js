@@ -70,6 +70,23 @@ paths['/auth/refresh'] = {
 paths['/auth/logout'] = {
   post: { tags: ['Auth'], summary: 'Log out', security: bearer, responses: { 200: ok('Logged out'), 401: errors[401] } },
 };
+paths['/auth/verify-email'] = {
+  post: {
+    tags: ['Auth'],
+    summary: 'Confirm an email address',
+    description: 'The token comes from the link in the verification email.',
+    requestBody: json({ type: 'object', required: ['token'], properties: { token: { type: 'string' } } }),
+    responses: { 200: ok('Verified'), 400: ok('Invalid or expired token', ref('Error')) },
+  },
+};
+paths['/auth/resend-verification'] = {
+  post: {
+    tags: ['Auth'],
+    summary: 'Send a new verification email',
+    security: bearer,
+    responses: { 200: ok('Sent'), 400: ok('Already verified', ref('Error')), 401: errors[401] },
+  },
+};
 paths['/auth/reset'] = {
   get: {
     tags: ['Auth'],
@@ -510,6 +527,7 @@ module.exports = {
           username: { type: 'string' },
           email: { type: 'string', format: 'email' },
           avatar: { type: 'string' },
+          emailVerified: { type: 'boolean' },
           followers: { type: 'array', items: { type: 'string' } },
           following: { type: 'array', items: { type: 'string' } },
           status: { type: 'string', enum: ['online', 'offline'] },
@@ -526,6 +544,7 @@ module.exports = {
               username: { type: 'string' },
               email: { type: 'string' },
               avatar: { type: 'string' },
+              emailVerified: { type: 'boolean' },
             },
           },
           accessToken: { type: 'string' },
