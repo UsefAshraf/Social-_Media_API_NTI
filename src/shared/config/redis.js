@@ -1,11 +1,14 @@
 const Redis = require('ioredis');
 
 let client = null;
+let closing = false;
 const clients = [];
 
 const connect = () => {
+  closing = false;
   const redis = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 3 });
-  redis.on('error', (error) => console.error('Redis error:', error.message));
+  // connections being shut down can report resets; ignore those
+  redis.on('error', (error) => closing || console.error('Redis error:', error.message));
   clients.push(redis);
   return redis;
 };
@@ -21,6 +24,7 @@ const getRedis = () => {
 const createRedisClient = () => (process.env.REDIS_URL ? connect() : null);
 
 const closeRedis = async () => {
+  closing = true;
   await Promise.all(clients.splice(0).map((c) => c.quit().catch(() => c.disconnect())));
   client = null;
 };
