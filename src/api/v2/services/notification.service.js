@@ -1,5 +1,6 @@
 const Notification = require("../../../shared/models/Notification");
 const { isBlockedBetween } = require("./block.service");
+const { logger } = require("../../../shared/utils/logger");
 
 const populateFields = [
     { path: "sender", select: "username avatar" },
@@ -24,7 +25,7 @@ exports.notify = async (io, { recipient, sender, type, content, link = null, rel
         if (io) io.to(recipient.toString()).emit("notification:new", notification);
         return notification;
     } catch (error) {
-        console.error("Failed to create notification", error);
+        logger.error({ err: error, type }, "Failed to create notification");
         return null;
     }
 }

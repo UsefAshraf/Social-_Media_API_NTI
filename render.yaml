@@ -1,0 +1,44 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: social-media-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: MONGODB_URI
+        sync: false # MongoDB Atlas connection string
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: social-media-redis
+          property: connectionString
+      # the free plan has no persistent disk, so images go to Cloudinary
+      - key: STORAGE_DRIVER
+        value: cloudinary
+      - key: CLOUDINARY_URL
+        sync: false # cloudinary://<key>:<secret>@<cloud>
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: EMAIL
+        sync: false
+      - key: PASSWORD
+        sync: false
+
+  - type: keyvalue
+    name: social-media-redis
+    plan: free
+    maxmemoryPolicy: noeviction # BullMQ must not lose queued jobs
+    ipAllowList: [] # only reachable from Render services
