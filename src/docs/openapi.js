@@ -163,6 +163,37 @@ paths['/users/{id}/follow'] = {
     responses: { 200: ok('Unfollowed'), 404: errors[404] },
   },
 };
+paths['/users/blocked'] = {
+  get: {
+    tags: ['Users'],
+    summary: 'Users you have blocked',
+    security: bearer,
+    responses: {
+      200: ok('List', {
+        type: 'object',
+        properties: { count: { type: 'integer' }, data: { type: 'array', items: ref('UserSummary') } },
+      }),
+    },
+  },
+};
+paths['/users/{id}/block'] = {
+  post: {
+    tags: ['Users'],
+    summary: 'Block a user',
+    description:
+      'Removes follows both ways. Blocked users cannot see each other\'s profile or posts, follow, comment, like, message or notify each other.',
+    security: bearer,
+    parameters: [idParam('id', 'User to block')],
+    responses: { 200: ok('Blocked'), 400: ok('Cannot block yourself', ref('Error')), 404: errors[404] },
+  },
+  delete: {
+    tags: ['Users'],
+    summary: 'Unblock a user',
+    security: bearer,
+    parameters: [idParam('id', 'User to unblock')],
+    responses: { 200: ok('Unblocked') },
+  },
+};
 const connections = (summary) => ({
   get: {
     tags: ['Users'],
