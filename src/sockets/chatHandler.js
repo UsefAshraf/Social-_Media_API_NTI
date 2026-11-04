@@ -1,6 +1,6 @@
 const { createRoom, createMessage } = require("../api/v2/services/message.service")
 const { isBlockedBetween } = require("../api/v2/services/block.service")
-const { log } = require("../shared/utils/logger")
+const { log, logger } = require("../shared/utils/logger")
 
 const chatHandler = (io,socket) => {
     // join
@@ -12,7 +12,7 @@ const chatHandler = (io,socket) => {
             log(`User ${socket.userId} joined room ${room}`);
             socket.emit("chat:joined", { room,userId })
         }catch(error){
-            console.log(error)
+            logger.error({ err: error, userId: socket.userId }, "chat:join failed")
             socket.emit("chat:error", { message:"Failed to join room",error })
         }
     })
@@ -36,7 +36,7 @@ const chatHandler = (io,socket) => {
             log(`User ${socket.userId} sent message to ${receiverId}`);
 
         }catch(error){
-            console.log(error)
+            logger.error({ err: error, userId: socket.userId }, "chat:message failed")
             socket.emit("chat:error", { message:"Failed to send message",error })
         }
     })
@@ -49,7 +49,7 @@ const chatHandler = (io,socket) => {
 
             socket.to(room).emit("chat:typing", { userId:socket.userId , isTyping })
         }catch(error){
-            console.log(error)
+            logger.error({ err: error, userId: socket.userId }, "chat:typing failed")
             socket.emit("chat:error", { message:"Failed to send typing indicator",error })
         }
     })
@@ -60,7 +60,7 @@ const chatHandler = (io,socket) => {
             socket.leave(room)
             log(`User ${socket.userId} left room ${room}`);
         }catch(error){
-            console.log(error)
+            logger.error({ err: error, userId: socket.userId }, "chat:leave failed")
             socket.emit("chat:error", { message:"Failed to leave room",error })
         }
     })

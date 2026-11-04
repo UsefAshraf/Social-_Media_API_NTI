@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { uploadDir } = require("../config/multerConfig");
+const { logger } = require("./logger");
 
 const UPLOAD_PREFIX = "/uploads/";
 
@@ -15,7 +16,7 @@ const removeUpload = async (url) => {
   try {
     await fs.promises.unlink(path.join(uploadDir, filename));
   } catch (error) {
-    if (error.code !== "ENOENT") console.error("Failed to remove upload", error);
+    if (error.code !== "ENOENT") logger.error({ err: error, url }, "Failed to remove upload");
   }
 };
 

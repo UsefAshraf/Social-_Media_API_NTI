@@ -6,7 +6,7 @@ const User = require("../shared/models/User");
 const { chatHandler } = require("./chatHandler");
 const { notificationHandler } = require("./notificationHandler");
 const { presenceHandler, resetPresence } = require("./presenceHandler");
-const { log } = require("../shared/utils/logger");
+const { log, logger } = require("../shared/utils/logger");
 
 const initializeSocketIO = (server) => {
     const io = socketIO(server, {
@@ -50,7 +50,7 @@ const initializeSocketIO = (server) => {
     });
 
     // with several instances sharing Redis, one restarting must not mark everyone offline
-    if (!pubClient) resetPresence().catch((error) => console.log(error));
+    if (!pubClient) resetPresence().catch((error) => logger.error({ err: error }, "Failed to reset presence"));
 
     io.on("connection", (socket) => {
         log(`User connected ${socket.userId}`);
@@ -66,7 +66,7 @@ const initializeSocketIO = (server) => {
         });
 
         socket.on("error", (error) => {
-            console.log(`Socket error: ${error}`);
+            logger.error({ err: error, userId: socket.userId }, "Socket error");
         });
     });
 

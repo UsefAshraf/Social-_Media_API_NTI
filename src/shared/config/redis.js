@@ -1,4 +1,5 @@
 const Redis = require('ioredis');
+const { logger } = require('../utils/logger');
 
 let client = null;
 let closing = false;
@@ -8,7 +9,7 @@ const connect = (options = {}) => {
   closing = false;
   const redis = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 3, ...options });
   // connections being shut down can report resets; ignore those
-  redis.on('error', (error) => closing || console.error('Redis error:', error.message));
+  redis.on('error', (error) => closing || logger.error({ err: error }, 'Redis error'));
   clients.push(redis);
   return redis;
 };

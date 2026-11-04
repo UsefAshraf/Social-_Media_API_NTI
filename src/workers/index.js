@@ -3,7 +3,7 @@ const { QUEUE_PREFIX, queueConnection, getQueue } = require('../shared/queue/que
 const emailService = require('../api/v2/services/email.service');
 const imageService = require('../api/v2/services/image.service');
 const notificationService = require('../api/v2/services/notification.service');
-const { log } = require('../shared/utils/logger');
+const { log, logger } = require('../shared/utils/logger');
 
 const processors = {
   email: (job) => emailService.deliverEmail(job.data),
@@ -24,7 +24,7 @@ const startWorkers = async () => {
       concurrency: concurrency[name],
     });
     worker.on('completed', (job) => log(`${name} job ${job.id} completed`));
-    worker.on('failed', (job, error) => console.error(`${name} job ${job?.id} failed:`, error.message));
+    worker.on('failed', (job, error) => logger.error({ err: error, queue: name, jobId: job?.id, attempts: job?.attemptsMade }, 'Job failed'));
     return worker;
   });
 
