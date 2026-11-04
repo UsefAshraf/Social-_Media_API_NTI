@@ -286,6 +286,43 @@ paths['/posts/{id}/bookmark'] = {
     responses: { 200: ok('Removed') },
   },
 };
+const windowParams = (defaultHours) => [
+  { name: 'hours', in: 'query', description: 'Look-back window', schema: { type: 'integer', minimum: 1, maximum: 168, default: defaultHours } },
+  { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 10 } },
+];
+paths['/posts/trending'] = {
+  get: {
+    tags: ['Posts'],
+    summary: 'Trending posts',
+    description: 'Ranked by (likes + 2 x comments) / (age in hours + 2)^1.5.',
+    security: bearer,
+    parameters: windowParams(48),
+    responses: { 200: ok('Posts with a score field', { type: 'object', properties: { data: { type: 'array', items: ref('Post') } } }) },
+  },
+};
+paths['/hashtags/trending'] = {
+  get: {
+    tags: ['Search'],
+    summary: 'Trending hashtags',
+    description: 'Ranked by distinct authors, then by post count.',
+    security: bearer,
+    parameters: windowParams(24),
+    responses: {
+      200: ok('Hashtags', {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { tag: { type: 'string' }, posts: { type: 'integer' }, authors: { type: 'integer' } },
+            },
+          },
+        },
+      }),
+    },
+  },
+};
 paths['/posts/hashtag/{tag}'] = postList('Posts with a hashtag', [
   { name: 'tag', in: 'path', required: true, description: 'Hashtag without #', schema: { type: 'string', example: 'nodejs' } },
 ]);
