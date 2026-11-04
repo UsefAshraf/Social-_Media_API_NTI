@@ -56,6 +56,16 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    // saved posts; private, so excluded from queries unless selected
+    bookmarks: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Post',
+        },
+      ],
+      select: false,
+    },
     notifications: [
       {
         type: mongoose.Schema.Types.ObjectId,

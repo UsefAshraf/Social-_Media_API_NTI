@@ -214,6 +214,23 @@ paths['/posts'] = {
 };
 paths['/posts/feed'] = postList('Posts from people you follow, plus your own');
 paths['/posts/user/{userId}'] = postList("A user's posts", [idParam('userId', 'Author id')]);
+paths['/posts/bookmarks'] = postList('Your saved posts, most recently saved first');
+paths['/posts/{id}/bookmark'] = {
+  post: {
+    tags: ['Posts'],
+    summary: 'Save a post',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    responses: { 200: ok('Saved'), 404: errors[404] },
+  },
+  delete: {
+    tags: ['Posts'],
+    summary: 'Remove a post from saved',
+    security: bearer,
+    parameters: [idParam('id', 'Post id')],
+    responses: { 200: ok('Removed') },
+  },
+};
 paths['/posts/hashtag/{tag}'] = postList('Posts with a hashtag', [
   { name: 'tag', in: 'path', required: true, description: 'Hashtag without #', schema: { type: 'string', example: 'nodejs' } },
 ]);

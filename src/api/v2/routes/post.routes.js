@@ -15,6 +15,8 @@ router.get('/', protect, postController.getPosts);
 
 router.get('/feed', protect, postController.getFeed);
 
+router.get('/bookmarks', protect, postController.getBookmarks);
+
 router.get('/user/:userId', protect, postController.getUserPosts);
 
 router.get('/hashtag/:tag', protect, postController.getPostsByHashtag);
@@ -26,6 +28,10 @@ router.patch('/:id', protect, validate(updatePostSchema), postController.updateP
 router.delete('/:id', protect, postController.deletePost);
 
 router.post('/:id/like', protect, postController.likePost);
+
+router.post('/:id/bookmark', protect, postController.bookmarkPost);
+
+router.delete('/:id/bookmark', protect, postController.unbookmarkPost);
 
 router.post('/:id/comments', protect, validate(createCommentSchema), postController.addComment);
 
