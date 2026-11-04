@@ -490,7 +490,7 @@ module.exports = {
         type: 'object',
         properties: {
           _id: { type: 'string' },
-          type: { type: 'string', enum: ['message', 'comment', 'like', 'post', 'follow'] },
+          type: { type: 'string', enum: ['message', 'comment', 'like', 'post', 'follow', 'mention'] },
           content: { type: 'string', example: 'alice liked your post' },
           sender: ref('UserSummary'),
           link: { type: 'string', example: '/posts/665f1c2e8b3e4a0012345678' },
