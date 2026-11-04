@@ -72,8 +72,18 @@ Check it is up: `curl http://localhost:5000/health`, then open **http://localhos
 | `METRICS_TOKEN` | – | If set, `/metrics` requires `Authorization: Bearer <token>` |
 | `RUN_WORKERS` | `true` | With Redis, run queue workers inside the API. Set `false` when using `npm run worker` |
 | `EMAIL` / `PASSWORD` | – | Gmail address and app password; emails are skipped if unset |
+| `STORAGE_DRIVER` | `local` | `cloudinary` stores processed images in Cloudinary (set `CLOUDINARY_URL`) |
+| `TRUST_PROXY` | – | Proxies in front of the API, e.g. `1` on Render, so rate limits use the real client IP |
+| `COOKIE_SAMESITE` | `strict` | `none` for a frontend on another domain (forces Secure cookies) |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` | Block posting and commenting until the email is verified |
 | `FRONTEND_URL` | `http://localhost:3000` | Base URL for password reset and verification links |
+
+### Deploying to Render
+
+1. Create a free MongoDB Atlas cluster and a Cloudinary account.
+2. In Render, choose **New → Blueprint** and select this repository. `render.yaml` creates the API and a Redis instance.
+3. Fill in `MONGODB_URI`, `CLOUDINARY_URL`, `ALLOWED_ORIGINS` and `FRONTEND_URL` when prompted. JWT secrets are generated for you.
+4. Once it's live, open `https://<your-app>.onrender.com/api-docs`.
 
 ## API
 
