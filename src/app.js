@@ -68,6 +68,9 @@ app.get("/health", (req, res) => {
   });
 });
 
+// the bare address opens the interactive docs
+app.get("/", (req, res) => res.redirect("/api-docs"));
+
 app.get("/metrics", metricsHandler);
 
 app.get("/api-docs.json", (req, res) => res.json(openApiSpec));
