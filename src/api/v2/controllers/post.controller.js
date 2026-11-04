@@ -297,7 +297,9 @@ const deleteComment = asyncHandler(async (req, res) => {
     throw new ApiError(403, 'Not authorized to delete this comment');
   }
 
-  comment.deleteOne();
+  post.comments.pull(
+    ...post.comments.filter((c) => c._id.equals(comment._id) || (c.parentId && c.parentId.equals(comment._id)))
+  );
   await post.save();
 
   res.status(200).json({
