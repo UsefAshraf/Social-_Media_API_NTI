@@ -90,6 +90,25 @@ const getUserPosts = asyncHandler(async (req, res) => {
   });
 });
 
+const getPostsByHashtag = asyncHandler(async (req, res) => {
+  const paging = parsePagination(req.query);
+  const filter = { hashtags: req.params.tag.replace(/^#/, '').toLowerCase() };
+
+  const posts = await Post.find(filter)
+    .populate('author', 'username avatar')
+    .sort({ createdAt: -1 })
+    .skip(paging.skip)
+    .limit(paging.limit);
+
+  const total = await Post.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    data: posts,
+    pagination: paginationMeta(paging, total),
+  });
+});
+
 const getPost = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.id)
     .populate('author', 'username avatar')
@@ -269,6 +288,7 @@ module.exports = {
   getPosts,
   getFeed,
   getUserPosts,
+  getPostsByHashtag,
   getPost,
   updatePost,
   deletePost,

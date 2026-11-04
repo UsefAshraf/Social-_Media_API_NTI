@@ -17,6 +17,8 @@ router.get('/feed', protect, postController.getFeed);
 
 router.get('/user/:userId', protect, postController.getUserPosts);
 
+router.get('/hashtag/:tag', protect, postController.getPostsByHashtag);
+
 router.get('/:id', protect, postController.getPost);
 
 router.patch('/:id', protect, validate(updatePostSchema), postController.updatePost);
