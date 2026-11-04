@@ -75,7 +75,10 @@ describeWithRedis('with Redis (two API instances)', () => {
     const [status] = await a.emitWithAck('presence:query', { userIds: [bob.id] });
     expect(status.status).toBe('online');
 
-    const offline = new Promise((resolve) => a.once('presence:update', resolve));
+    // other presence events (e.g. alice coming online) may still be in flight
+    const offline = new Promise((resolve) =>
+      a.on('presence:update', (update) => update.userId === bob.id && update.status === 'offline' && resolve(update))
+    );
     b.close();
     expect(await offline).toMatchObject({ userId: bob.id, status: 'offline' });
   });
