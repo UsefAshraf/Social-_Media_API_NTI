@@ -35,6 +35,8 @@ router.delete('/:id/bookmark', protect, postController.unbookmarkPost);
 
 router.post('/:id/comments', protect, validate(createCommentSchema), postController.addComment);
 
+router.post('/:id/comments/:commentId/like', protect, postController.likeComment);
+
 router.delete('/:id/comments/:commentId', protect, postController.deleteComment);
 
 module.exports = router;

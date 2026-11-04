@@ -278,6 +278,40 @@ const addComment = asyncHandler(async (req, res) => {
   });
 });
 
+const likeComment = asyncHandler(async (req, res) => {
+  const post = await Post.findById(req.params.id);
+  if (!post) {
+    throw new ApiError(404, 'Post not found');
+  }
+
+  const comment = post.comments.id(req.params.commentId);
+  if (!comment) {
+    throw new ApiError(404, 'Comment not found');
+  }
+
+  const liked = !comment.likes.some((id) => id.equals(req.user._id));
+  if (liked) comment.likes.push(req.user._id);
+  else comment.likes.pull(req.user._id);
+
+  await post.save();
+
+  if (liked) {
+    await notify(req.app.get('io'), {
+      recipient: comment.author,
+      sender: req.user._id,
+      type: 'like',
+      content: `${req.user.username} liked your comment`,
+      link: `/posts/${post._id}`,
+      relatedId: post._id,
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: { liked, likes: comment.likes.length },
+  });
+});
+
 const deleteComment = asyncHandler(async (req, res) => {
   const { id: postId, commentId } = req.params;
 
@@ -363,5 +397,6 @@ module.exports = {
   deletePost,
   likePost,
   addComment,
+  likeComment,
   deleteComment,
 };
