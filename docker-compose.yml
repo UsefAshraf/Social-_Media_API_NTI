@@ -1,3 +1,6 @@
+# fixed project name: the folder name (Social-_Media_API_NTI) is not a valid image name
+name: social-media-api
+
 services:
   api:
     build: .
