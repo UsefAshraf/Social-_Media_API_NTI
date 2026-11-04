@@ -204,7 +204,9 @@ paths['/posts'] = {
   post: {
     tags: ['Posts'],
     summary: 'Create a post',
-    description: 'JSON with an image URL, or multipart with an `image` file (JPEG/PNG, max 5MB).',
+    description:
+      'JSON with an image URL, or multipart with an `image` file (JPEG/PNG, max 5MB). ' +
+      '#hashtags are indexed and @mentioned users are notified.',
     security: bearer,
     requestBody: postBody(['content']),
     responses: { 201: ok('Created', onePost), 400: errors[400] },
@@ -212,6 +214,9 @@ paths['/posts'] = {
 };
 paths['/posts/feed'] = postList('Posts from people you follow, plus your own');
 paths['/posts/user/{userId}'] = postList("A user's posts", [idParam('userId', 'Author id')]);
+paths['/posts/hashtag/{tag}'] = postList('Posts with a hashtag', [
+  { name: 'tag', in: 'path', required: true, description: 'Hashtag without #', schema: { type: 'string', example: 'nodejs' } },
+]);
 paths['/posts/{id}'] = {
   get: {
     tags: ['Posts'],
@@ -367,6 +372,40 @@ paths['/notifications/{id}'] = {
   },
 };
 
+// --- Search
+paths['/search'] = {
+  get: {
+    tags: ['Search'],
+    summary: 'Search users, posts and hashtags',
+    description: 'A leading `#` searches hashtags only, a leading `@` searches users only.',
+    security: bearer,
+    parameters: [
+      { name: 'q', in: 'query', required: true, schema: { type: 'string', example: '#nodejs' } },
+      { name: 'type', in: 'query', schema: { type: 'string', enum: ['all', 'users', 'posts', 'hashtags'], default: 'all' } },
+      { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 10 } },
+    ],
+    responses: {
+      200: ok('Results', {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'object',
+            properties: {
+              users: { type: 'array', items: ref('UserSummary') },
+              posts: { type: 'array', items: ref('Post') },
+              hashtags: {
+                type: 'array',
+                items: { type: 'object', properties: { tag: { type: 'string' }, posts: { type: 'integer' } } },
+              },
+            },
+          },
+        },
+      }),
+      400: errors[400],
+    },
+  },
+};
+
 module.exports = {
   openapi: '3.0.3',
   info: {
@@ -396,6 +435,7 @@ module.exports = {
     { name: 'Posts' },
     { name: 'Messages' },
     { name: 'Notifications' },
+    { name: 'Search' },
   ],
   components: {
     securitySchemes: {
@@ -470,6 +510,8 @@ module.exports = {
           image: { type: 'string', example: '/uploads/1730000000000-ab12cd34ef56.png' },
           author: ref('UserSummary'),
           likes: { type: 'array', items: { type: 'string' } },
+          hashtags: { type: 'array', items: { type: 'string' }, example: ['nodejs'] },
+          mentions: { type: 'array', items: { type: 'string' } },
           comments: { type: 'array', items: ref('Comment') },
           createdAt: { type: 'string', format: 'date-time' },
         },
