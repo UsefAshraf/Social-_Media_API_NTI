@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Social",
+    "slug": "social-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.socialapi.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.socialapi.mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-router",
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Social to access your photos so you can add them to posts.",
+          "cameraPermission": "Allow Social to use your camera so you can take photos for posts."
+        }
+      ],
+      "expo-font",
+      "expo-asset"
+    ],
+    "scheme": "socialapp",
+    "extra": {
+      "apiUrl": "http://localhost:5000"
+    }
+  }
+}
