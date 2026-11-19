@@ -7,7 +7,7 @@ const {
   verifyRefreshToken,
 } = require('../../../shared/utils/tokens');
 const emailService = require('./email.service');
-const { sendWelcomeEmail, sendResetEmail } = emailService;
+const { sendWelcomeEmail } = emailService;
 
 const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex")
 
@@ -136,7 +136,7 @@ const resetPassword = async (email) => {
   foundedUser.resetToken = hashToken(token)
   foundedUser.resetTokenExpiration = Date.now() + 18000000 //5 hours in miliseconds
   let savedUser = await foundedUser.save()
-  await sendResetEmail(savedUser.email, savedUser.username, token)
+  await emailService.sendResetEmail(savedUser.email, savedUser.username, token)
 }
 
 const submitNewPassword = async (token, newPassword) => {

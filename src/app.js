@@ -27,6 +27,7 @@ const openApiSpec = require("./docs/openapi");
 const { logger } = require("./shared/utils/logger");
 const { requestLogger } = require("./shared/middleware/requestLogger");
 const { metricsMiddleware, metricsHandler } = require("./shared/metrics");
+const { mountDeepLinkPages } = require("./deeplink");
 
 app.use(requestLogger);
 app.use(metricsMiddleware);
@@ -72,6 +73,9 @@ app.get("/metrics", metricsHandler);
 
 app.get("/api-docs.json", (req, res) => res.json(openApiSpec));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiSpec));
+
+// landing pages for email links: GET /reset-password and /verify-email
+mountDeepLinkPages(app);
 
 app.use("/api/v2", v2Routes);
 

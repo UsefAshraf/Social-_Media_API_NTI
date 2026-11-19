@@ -76,7 +76,8 @@ Check it is up: `curl http://localhost:5000/health`, then open **http://localhos
 | `TRUST_PROXY` | – | Proxies in front of the API, e.g. `1` on Render, so rate limits use the real client IP |
 | `COOKIE_SAMESITE` | `strict` | `none` for a frontend on another domain (forces Secure cookies) |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` | Block posting and commenting until the email is verified |
-| `FRONTEND_URL` | `http://localhost:3000` | Base URL for password reset and verification links |
+| `FRONTEND_URL` | `http://localhost:3000` | Base URL for password reset and verification links. Set it to the API's public URL to use the built-in landing pages (see [Email links and the mobile app](#email-links-and-the-mobile-app)) |
+| `APP_SCHEME` | `socialapp` | Mobile app URL scheme the landing pages open |
 
 ### Deploying to Render
 
@@ -103,6 +104,20 @@ Images are uploaded as multipart field `image` (JPEG/PNG, max 5MB) on `POST/PATC
 Errors share one shape: `{ "success": false, "error": "message" }`.
 
 ### Socket.IO
+
+### Email links and the mobile app
+
+Reset and verification emails link to `${FRONTEND_URL}/reset-password?token=<64 hex>` and `${FRONTEND_URL}/verify-email?token=<64 hex>`. The API serves both pages itself, so there's no need for a web frontend: set `FRONTEND_URL` to the API's public URL (e.g. `https://<your-app>.onrender.com`) and `APP_SCHEME` to the app's scheme.
+
+Each page:
+
+- tries to open the app at `${APP_SCHEME}://reset-password?token=…` / `${APP_SCHEME}://verify-email?token=…`, with an **Open in app** button to retry;
+- works without the app: the reset page has a new password form that calls `POST /api/v2/auth/reset`, and the verify page has a button that calls `POST /api/v2/auth/verify-email` (same origin, so `ALLOWED_ORIGINS` doesn't need to include it);
+- shows an error and no form when the token is missing or isn't 64 hex characters.
+
+The pages send `Cache-Control: no-store` and `Referrer-Policy: no-referrer` so the token isn't cached or leaked, and use their own stricter CSP (`default-src 'none'`, scripts and styles from `/deeplink/` only, no inline code). The global Helmet policy is unchanged.
+
+Future step: universal links / app links, so `https://` email links open the app directly without the landing page. That needs `/.well-known/apple-app-site-association` (Apple team ID + bundle ID) and `/.well-known/assetlinks.json` (Android package name + signing certificate SHA-256 fingerprint). Neither is served yet.
 
 ```js
 const socket = io("http://localhost:5000", { auth: { token: accessToken } });
@@ -137,6 +152,7 @@ src/
 ├── docs/openapi.js         # OpenAPI 3 spec
 └── shared/
     ├── config/             # db, multer, nodemailer
+├── deeplink/               # /reset-password and /verify-email landing pages for email links
     ├── middleware/         # auth, validation, rate limiting, error handler
     ├── models/             # User, Post, Message, Notification
     └── utils/
