@@ -67,6 +67,9 @@
     "testTimeout": 30000,
     "collectCoverageFrom": [
       "src/**/*.js"
+    ],
+    "roots": [
+      "<rootDir>/tests"
     ]
   }
 }
