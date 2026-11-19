@@ -62,23 +62,16 @@ const requestResetPassword = asyncHandler(async (req, res) => {
   })
 })
 
-const submitNewPassword = async (req, res) => {
-  try {
-    let { token, newPassword } = req.body
-    await authService.submitNewPassword(token, newPassword)
+// invalid or expired tokens surface as ApiError(400) from the service
+const submitNewPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+  await authService.submitNewPassword(token, newPassword);
 
-    res.status(200).json({
-      success: true,
-      message: "password reset successfully"
-    }
-    )
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: "Invalid or expired token"
-    })
-  }
-}
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successfully',
+  });
+});
 
 const verifyEmail = asyncHandler(async (req, res) => {
   await authService.verifyEmail(req.body.token);

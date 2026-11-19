@@ -62,8 +62,25 @@ const verifyEmailSchema = Joi.object({
   }),
 });
 
+const resetPasswordSchema = Joi.object({
+  // one rule, so a bad token reports a single message
+  token: Joi.string().pattern(/^[0-9a-fA-F]{64}$/).required().messages({
+    'any.required': 'Reset token is required',
+    'string.empty': 'Reset token is required',
+    'string.base': 'Invalid reset token',
+    'string.pattern.base': 'Invalid reset token',
+  }),
+  // same rule as registerSchema.password
+  newPassword: Joi.string().min(6).required().messages({
+    'string.min': 'Password must be at least 6 characters',
+    'string.empty': 'New password is required',
+    'any.required': 'New password is required',
+  }),
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
   verifyEmailSchema,
+  resetPasswordSchema,
 };

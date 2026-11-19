@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const validate = require('../../../shared/middleware/validate');
-const { registerSchema, loginSchema, verifyEmailSchema } = require('../validators/auth.validator');
+const { registerSchema, loginSchema, verifyEmailSchema, resetPasswordSchema } = require('../validators/auth.validator');
 const { protect } = require('../../../shared/middleware/auth');
 const { authLimiter } = require('../../../shared/middleware/rateLimiter');
 
@@ -20,6 +20,6 @@ router.post('/resend-verification', protect, authLimiter, authController.resendV
 
 router.get("/reset", authLimiter, authController.requestResetPassword)
 
-router.post("/reset", authLimiter, authController.submitNewPassword)
+router.post("/reset", authLimiter, validate(resetPasswordSchema), authController.submitNewPassword)
 
 module.exports = router;

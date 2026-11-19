@@ -82,7 +82,11 @@ paths['/auth/verify-email'] = {
     tags: ['Auth'],
     summary: 'Confirm an email address',
     description: 'The token comes from the link in the verification email.',
-    requestBody: json({ type: 'object', required: ['token'], properties: { token: { type: 'string' } } }),
+    requestBody: json({
+      type: 'object',
+      required: ['token'],
+      properties: { token: { type: 'string', pattern: '^[0-9a-fA-F]{64}$', description: '64 hex characters' } },
+    }),
     responses: { 200: ok('Verified'), 400: ok('Invalid or expired token', ref('Error')) },
   },
 };
@@ -104,12 +108,23 @@ paths['/auth/reset'] = {
   post: {
     tags: ['Auth'],
     summary: 'Set a new password with a reset token',
+    description:
+      'The token comes from the reset email link (`/reset-password?token=...`). It can be used once and expires after 5 hours.',
     requestBody: json({
       type: 'object',
       required: ['token', 'newPassword'],
-      properties: { token: { type: 'string' }, newPassword: { type: 'string', minLength: 6 } },
+      properties: {
+        token: { type: 'string', pattern: '^[0-9a-fA-F]{64}$', description: '64 hex characters' },
+        newPassword: { type: 'string', minLength: 6 },
+      },
     }),
-    responses: { 200: ok('Password changed'), 400: ok('Invalid or expired token', ref('Error')) },
+    responses: {
+      200: ok('Password changed', {
+        type: 'object',
+        properties: { success: { type: 'boolean', example: true }, message: { type: 'string' } },
+      }),
+      400: ok('Validation failed, or the token is invalid or expired', ref('Error')),
+    },
   },
 };
 
