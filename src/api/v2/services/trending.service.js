@@ -15,6 +15,7 @@ const trendingPosts = async ({ hours, limit, hidden = [] } = {}) => {
       $addFields: {
         engagement: { $add: [{ $size: '$likes' }, { $multiply: [2, { $size: '$comments' }] }] },
         ageHours: { $divide: [{ $subtract: [now, '$createdAt'] }, HOUR] },
+        commentCount: { $size: { $ifNull: ['$comments', []] } },
       },
     },
     { $match: { engagement: { $gt: 0 } } },
@@ -24,7 +25,10 @@ const trendingPosts = async ({ hours, limit, hidden = [] } = {}) => {
     { $project: { ageHours: 0, comments: 0 } },
   ]);
 
-  return Post.populate(posts, { path: 'author', select: 'username avatar' });
+  return Post.populate(posts, [
+    { path: 'author', select: 'username avatar' },
+    { path: 'mentions', select: 'username' },
+  ]);
 };
 
 const trendingHashtags = ({ hours, limit } = {}) => {

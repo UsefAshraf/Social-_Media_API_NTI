@@ -8,6 +8,7 @@ const { resolveMentions, notifyMentions } = require('../services/mention.service
 const { hiddenUserIds, isBlockedBetween } = require('../services/block.service');
 const postService = require('../services/post.service');
 const { listPosts } = require('../services/feed.service');
+const { POST_POPULATE, withViewerState } = postService;
 const { handleUpload } = require('../services/image.service');
 
 const assertNotBlocked = async (userId, post) => {
@@ -34,11 +35,11 @@ const createPost = asyncHandler(async (req, res) => {
   await notifyMentions(req.app.get('io'), mentioned, { sender: req.user, where: 'post', post });
   if (uploaded) Object.assign(post, await handleUpload('post', post, uploaded));
 
-  await post.populate('author', 'username avatar');
+  await post.populate(POST_POPULATE);
 
   res.status(201).json({
     success: true,
-    data: post,
+    data: await withViewerState(post, req.user._id),
   });
 });
 
@@ -47,7 +48,7 @@ const getPosts = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    ...(await listPosts(filter, req.query)),
+    ...(await listPosts(filter, req.query, { viewerId: req.user._id })),
   });
 });
 
@@ -57,59 +58,37 @@ const getFeed = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    ...(await listPosts(filter, req.query)),
+    ...(await listPosts(filter, req.query, { viewerId: req.user._id })),
   });
 });
 
 const getUserPosts = asyncHandler(async (req, res) => {
-  const paging = parsePagination(req.query);
   const filter = { author: req.params.userId };
 
   if (await isBlockedBetween(req.user._id, req.params.userId)) {
     throw new ApiError(404, 'User not found');
   }
 
-  const posts = await Post.find(filter)
-    .populate("author", "username avatar")
-    .sort({ createdAt: -1 })
-    .skip(paging.skip)
-    .limit(paging.limit);
-
-  const total = await Post.countDocuments(filter);
-
   res.status(200).json({
     success: true,
-    data: posts,
-    pagination: paginationMeta(paging, total),
+    ...(await listPosts(filter, req.query, { viewerId: req.user._id })),
   });
 });
 
 const getPostsByHashtag = asyncHandler(async (req, res) => {
-  const paging = parsePagination(req.query);
   const filter = {
     hashtags: req.params.tag.replace(/^#/, '').toLowerCase(),
     author: { $nin: await hiddenUserIds(req.user._id) },
   };
 
-  const posts = await Post.find(filter)
-    .populate('author', 'username avatar')
-    .sort({ createdAt: -1 })
-    .skip(paging.skip)
-    .limit(paging.limit);
-
-  const total = await Post.countDocuments(filter);
-
   res.status(200).json({
     success: true,
-    data: posts,
-    pagination: paginationMeta(paging, total),
+    ...(await listPosts(filter, req.query, { viewerId: req.user._id })),
   });
 });
 
 const getPost = asyncHandler(async (req, res) => {
-  const post = await Post.findById(req.params.id)
-    .populate('author', 'username avatar')
-    .populate('comments.author', 'username avatar');
+  const post = await Post.findById(req.params.id).populate(POST_POPULATE);
 
   if (!post || (await isBlockedBetween(req.user._id, post.author._id))) {
     throw new ApiError(404, 'Post not found');
@@ -117,7 +96,7 @@ const getPost = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: post,
+    data: await withViewerState(post, req.user._id),
   });
 });
 
@@ -154,11 +133,11 @@ const updatePost = asyncHandler(async (req, res) => {
   await post.save();
   await notifyMentions(req.app.get('io'), newlyMentioned, { sender: req.user, where: 'post', post });
   if (uploaded) Object.assign(post, await handleUpload('post', post, uploaded));
-  await post.populate('author', 'username avatar');
+  await post.populate(POST_POPULATE);
 
   res.status(200).json({
     success: true,
-    data: post,
+    data: await withViewerState(post, req.user._id),
   });
 });
 
@@ -211,11 +190,11 @@ const likePost = asyncHandler(async (req, res) => {
       relatedId: post._id,
     });
   }
-  await post.populate('author', 'username avatar');
+  await post.populate(POST_POPULATE);
 
   res.status(200).json({
     success: true,
-    data: post,
+    data: await withViewerState(post, req.user._id),
   });
 });
 
@@ -272,12 +251,11 @@ const addComment = asyncHandler(async (req, res) => {
   const mentioned = (await resolveMentions(content)).filter((u) => !u._id.equals(post.author));
   await notifyMentions(req.app.get('io'), mentioned, { sender: req.user, where: 'comment', post });
 
-  await post.populate('author', 'username avatar');
-  await post.populate('comments.author', 'username avatar');
+  await post.populate(POST_POPULATE);
 
   res.status(201).json({
     success: true,
-    data: post,
+    data: await withViewerState(post, req.user._id),
   });
 });
 
@@ -350,12 +328,13 @@ const getBookmarks = asyncHandler(async (req, res) => {
   const ids = [...me.bookmarks].reverse();
   const pageIds = ids.slice(paging.skip, paging.skip + paging.limit);
 
-  const posts = await Post.find({ _id: { $in: pageIds } }).populate('author', 'username avatar');
+  const posts = await Post.find({ _id: { $in: pageIds } }).populate(POST_POPULATE).lean();
   const byId = new Map(posts.map((p) => [p._id.toString(), p]));
+  const page = pageIds.map((id) => byId.get(id.toString())).filter(Boolean);
 
   res.status(200).json({
     success: true,
-    data: pageIds.map((id) => byId.get(id.toString())).filter(Boolean),
+    data: await withViewerState(page, req.user._id, { bookmarks: me.bookmarks }),
     pagination: paginationMeta(paging, ids.length),
   });
 });

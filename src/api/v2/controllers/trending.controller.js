@@ -1,6 +1,7 @@
 const asyncHandler = require('../../../shared/utils/asyncHandler');
 const trendingService = require('../services/trending.service');
 const { hiddenUserIds } = require('../services/block.service');
+const { withViewerState } = require('../services/post.service');
 
 const getTrendingPosts = asyncHandler(async (req, res) => {
   const { hours, limit } = req.query;
@@ -8,7 +9,7 @@ const getTrendingPosts = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: posts,
+    data: await withViewerState(posts, req.user._id),
   });
 });
 

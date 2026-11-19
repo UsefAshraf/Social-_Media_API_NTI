@@ -101,9 +101,9 @@ All routes are under `/api/v2` and, except register/login/refresh/reset, need `A
 
 Images are uploaded as multipart field `image` (JPEG/PNG, max 5MB) on `POST/PATCH /posts` and `PATCH /users/profile`, and served from `/uploads`.
 
-Errors share one shape: `{ "success": false, "error": "message" }`.
+Post lists (`/posts`, `/posts/feed`, `/posts/user/:userId`, `/posts/hashtag/:tag`) take `?cursor=` (the previous page's `pagination.nextCursor`) for infinite scroll, or `?page=` offsets. Every post returned to you carries `bookmarked` (whether you saved it), and `mentions` as `[{ _id, username }]`.
 
-### Socket.IO
+Errors share one shape: `{ "success": false, "error": "message" }`.
 
 ### Email links and the mobile app
 
@@ -118,6 +118,8 @@ Each page:
 The pages send `Cache-Control: no-store` and `Referrer-Policy: no-referrer` so the token isn't cached or leaked, and use their own stricter CSP (`default-src 'none'`, scripts and styles from `/deeplink/` only, no inline code). The global Helmet policy is unchanged.
 
 Future step: universal links / app links, so `https://` email links open the app directly without the landing page. That needs `/.well-known/apple-app-site-association` (Apple team ID + bundle ID) and `/.well-known/assetlinks.json` (Android package name + signing certificate SHA-256 fingerprint). Neither is served yet.
+
+### Socket.IO
 
 ```js
 const socket = io("http://localhost:5000", { auth: { token: accessToken } });
@@ -150,9 +152,9 @@ src/
 │   └── validators/         # Joi schemas
 ├── sockets/                # chat, notification and presence handlers
 ├── docs/openapi.js         # OpenAPI 3 spec
+├── deeplink/               # /reset-password and /verify-email landing pages for email links
 └── shared/
     ├── config/             # db, multer, nodemailer
-├── deeplink/               # /reset-password and /verify-email landing pages for email links
     ├── middleware/         # auth, validation, rate limiting, error handler
     ├── models/             # User, Post, Message, Notification
     └── utils/

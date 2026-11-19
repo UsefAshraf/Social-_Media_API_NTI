@@ -87,7 +87,7 @@ describe('search, hashtags and mentions', () => {
 
   it('notifies mentioned users once per post', async () => {
     const post = await createPost(alice, 'Thanks @bobby and @ghost_user!');
-    expect(post.mentions).toEqual([bob.id]);
+    expect(post.mentions).toEqual([{ _id: bob.id, username: 'bobby' }]);
 
     // editing without adding new mentions does not notify again
     await api()

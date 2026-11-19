@@ -2,6 +2,7 @@ const User = require('../../../shared/models/User');
 const Post = require('../../../shared/models/Post');
 const { escapeRegex } = require('../../../shared/utils/text');
 const { hiddenUserIds } = require('./block.service');
+const { withViewerState } = require('./post.service');
 
 const searchUsers = (q, limit, hidden) =>
   User.find({ username: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, _id: { $nin: hidden } })
@@ -12,6 +13,7 @@ const searchUsers = (q, limit, hidden) =>
 const searchPosts = (q, limit, hidden) =>
   Post.find({ $text: { $search: q }, author: { $nin: hidden } }, { score: { $meta: 'textScore' } })
     .populate('author', 'username avatar')
+    .populate('mentions', 'username')
     .sort({ score: { $meta: 'textScore' }, createdAt: -1 })
     .limit(limit);
 
@@ -42,7 +44,7 @@ const search = async (rawQuery, { type = 'all', limit = 10, viewerId } = {}) => 
     want('hashtags') ? searchHashtags(q, limit) : [],
   ]);
 
-  return { users, posts, hashtags };
+  return { users, posts: viewerId ? await withViewerState(posts, viewerId) : posts, hashtags };
 };
 
 module.exports = { search };

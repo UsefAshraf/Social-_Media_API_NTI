@@ -283,7 +283,7 @@ paths['/posts'] = {
   },
 };
 paths['/posts/feed'] = postList('Posts from people you follow, plus your own', [cursorParam]);
-paths['/posts/user/{userId}'] = postList("A user's posts", [idParam('userId', 'Author id')]);
+paths['/posts/user/{userId}'] = postList("A user's posts", [idParam('userId', 'Author id'), cursorParam]);
 paths['/posts/bookmarks'] = postList('Your saved posts, most recently saved first');
 paths['/posts/{id}/bookmark'] = {
   post: {
@@ -340,6 +340,7 @@ paths['/hashtags/trending'] = {
 };
 paths['/posts/hashtag/{tag}'] = postList('Posts with a hashtag', [
   { name: 'tag', in: 'path', required: true, description: 'Hashtag without #', schema: { type: 'string', example: 'nodejs' } },
+  cursorParam,
 ]);
 paths['/posts/{id}'] = {
   get: {
@@ -712,7 +713,11 @@ module.exports = {
           limit: { type: 'integer' },
           total: { type: 'integer' },
           pages: { type: 'integer' },
-          nextCursor: { type: 'string', nullable: true, description: 'Only on /posts and /posts/feed' },
+          nextCursor: {
+            type: 'string',
+            nullable: true,
+            description: 'On /posts, /posts/feed, /posts/user/{userId} and /posts/hashtag/{tag}; null on the last page',
+          },
         },
       },
       UserSummary: {
@@ -771,9 +776,16 @@ module.exports = {
           author: ref('UserSummary'),
           likes: { type: 'array', items: { type: 'string' } },
           hashtags: { type: 'array', items: { type: 'string' }, example: ['nodejs'] },
-          mentions: { type: 'array', items: { type: 'string' } },
-          comments: { type: 'array', items: ref('Comment') },
+          mentions: {
+            type: 'array',
+            description: 'Users @mentioned in the content',
+            items: { type: 'object', properties: { _id: { type: 'string' }, username: { type: 'string' } } },
+          },
+          comments: { type: 'array', items: ref('Comment'), description: 'Omitted on /posts/trending' },
+          commentCount: { type: 'integer', description: 'Number of comments (present on every route, including trending)' },
+          bookmarked: { type: 'boolean', description: 'Whether the signed-in user has saved this post' },
           createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
         },
       },
       Message: {
