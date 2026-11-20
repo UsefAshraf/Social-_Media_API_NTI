@@ -56,6 +56,63 @@ export function removePostEverywhere(qc: QueryClient, postId: string): void {
   qc.removeQueries({ queryKey: postKeys.detail(postId), exact: true });
 }
 
+/** Applies `updater` to every cached post (lists and details) for which `match` is true. */
+export function updatePostsWhere(qc: QueryClient, match: (post: Post) => boolean, updater: (post: Post) => Post): void {
+  const apply = (p: Post) => (match(p) ? updater(p) : p);
+  qc.setQueriesData<PostListData>({ queryKey: postKeys.lists() }, (data) => {
+    if (!isListData(data)) return data;
+    return mapPages(data, (posts) => {
+      let changed = false;
+      const next = posts.map((p) => {
+        const u = apply(p);
+        if (u !== p) changed = true;
+        return u;
+      });
+      return changed ? next : posts;
+    });
+  });
+  qc.setQueriesData<Post>({ queryKey: postKeys.details() }, (post) => (post && post.author ? apply(post) : post));
+}
+
+/** Sets the author's username/avatar on their posts and comments in every cached list and detail. */
+export function updateAuthorEverywhere(
+  qc: QueryClient,
+  authorId: string,
+  patch: { username?: string; avatar?: string | null },
+): void {
+  const fix = <T extends { author: Post['author'] }>(x: T): T => {
+    if (x.author.id !== authorId) return x;
+    const username = patch.username ?? x.author.username;
+    const avatar = patch.avatar !== undefined ? patch.avatar : x.author.avatar;
+    if (username === x.author.username && avatar === x.author.avatar) return x;
+    return { ...x, author: { ...x.author, username, avatar } };
+  };
+  updatePostsWhere(
+    qc,
+    (p) => p.author.id === authorId || p.comments.some((c) => c.author.id === authorId),
+    (p) => {
+      const withAuthor = fix(p);
+      if (!p.comments.some((c) => c.author.id === authorId)) return withAuthor;
+      const comments = p.comments.map(fix);
+      return comments.every((c, i) => c === p.comments[i]) ? withAuthor : { ...withAuthor, comments };
+    },
+  );
+}
+
+/** Removes every post by `authorId` from all cached lists and drops their detail queries (e.g. after blocking them). */
+export function removePostsByAuthor(qc: QueryClient, authorId: string): void {
+  qc.setQueriesData<PostListData>({ queryKey: postKeys.lists() }, (data) => {
+    if (!isListData(data)) return data;
+    return mapPages(data, (posts) =>
+      posts.some((p) => p.author.id === authorId) ? posts.filter((p) => p.author.id !== authorId) : posts,
+    );
+  });
+  qc.removeQueries({
+    queryKey: postKeys.details(),
+    predicate: (q) => (q.state.data as Post | undefined)?.author?.id === authorId,
+  });
+}
+
 /** Puts `post` at the top of a list's first page (only if that list is cached). */
 export function prependPost(qc: QueryClient, key: QueryKey, post: Post): void {
   qc.setQueryData<PostListData>(key, (data) => {

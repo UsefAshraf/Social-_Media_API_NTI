@@ -74,7 +74,8 @@ export function resolveMediaUrl(value: unknown): string | null {
   return `${API_URL}${v.startsWith('/') ? '' : '/'}${v}`;
 }
 
-function idOf(value: RawId | unknown): string {
+/** A Mongo id from a string, populated doc ({ _id }) or { id }; '' when absent. */
+export function idOf(value: RawId | unknown): string {
   if (typeof value === 'string') return value;
   if (value && typeof value === 'object') {
     const o = value as { _id?: unknown; id?: unknown };
@@ -231,12 +232,18 @@ function extensionFor(mime: PickedImage['mimeType']) {
 export function buildPostFormData(content: string | undefined, image: PickedImage): FormData {
   const form = new FormData();
   if (content !== undefined) form.append('content', content);
-  const file = { uri: image.uri, name: `post.${extensionFor(image.mimeType)}`, type: image.mimeType };
-  form.append('image', file as unknown as Blob);
+  form.append('image', imageFilePart(image, 'post'));
   return form;
 }
 
-function multipartConfig(opts: UploadOptions | undefined): AxiosRequestConfig {
+/** A picked image as a React Native FormData file part (`{ uri, name, type }`). */
+export function imageFilePart(image: PickedImage, baseName: string): Blob {
+  const file = { uri: image.uri, name: `${baseName}.${extensionFor(image.mimeType)}`, type: image.mimeType };
+  return file as unknown as Blob;
+}
+
+/** Axios config for a multipart upload: keeps FormData un-serialised, long timeout, 0..1 progress. */
+export function multipartConfig(opts: UploadOptions | undefined): AxiosRequestConfig {
   return {
     // The client's default Content-Type is application/json, which would make axios JSON-encode the FormData.
     // 'multipart/form-data' stops that; axios' xhr adapter then removes the header for React Native FormData
