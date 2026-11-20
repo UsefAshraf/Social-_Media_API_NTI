@@ -2,6 +2,7 @@ import type { AuthTokens, User } from '@/lib/contracts';
 
 import { http, refreshSession } from './client';
 import { makeAppError } from './errors';
+import { resolveMediaUrl } from './posts';
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './tokenStorage';
 
 /** Raw user as the backend sends it: auth responses use `id`, /users/profile sends the Mongo doc with `_id`. */
@@ -23,7 +24,7 @@ export function mapUser(raw: RawUser): User {
     id: String(id),
     username: raw.username ?? '',
     email: raw.email ?? '',
-    avatar: raw.avatar ?? null,
+    avatar: resolveMediaUrl(raw.avatar),
     emailVerified: Boolean(raw.emailVerified),
   };
   if (typeof raw.bio === 'string') user.bio = raw.bio;
