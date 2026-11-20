@@ -60,11 +60,11 @@ const userSchema = new mongoose.Schema(
     },
     resetToken: {
       type: String,
-      // select: false,
+      select: false,
     },
     resetTokenExpiration: {
       type: Date,
-      // select: false,
+      select: false,
     },
     followers: [
       {
