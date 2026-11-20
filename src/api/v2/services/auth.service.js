@@ -194,4 +194,5 @@ module.exports = {
   submitNewPassword,
   verifyEmail,
   resendVerification,
+  sendVerification,
 };

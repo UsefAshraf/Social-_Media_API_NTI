@@ -17,6 +17,13 @@ const updateProfileSchema = Joi.object({
     .messages({
       'string.email': 'Please provide a valid email',
     }),
+  bio: Joi.string()
+    .max(160)
+    .allow('')
+    .optional()
+    .messages({
+      'string.max': 'Bio cannot exceed 160 characters',
+    }),
   avatar: Joi.string()
     .uri()
     .allow('')

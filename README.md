@@ -94,10 +94,12 @@ All routes are under `/api/v2` and, except register/login/refresh/reset, need `A
 | Area | Endpoints |
 |---|---|
 | Auth | `POST /auth/register` · `POST /auth/login` · `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/reset?email=` · `POST /auth/reset` |
-| Users | `GET /users/profile` · `PATCH /users/profile` · `GET /users/:id` · `POST/DELETE /users/:id/follow` · `GET /users/:id/followers` · `GET /users/:id/following` |
+| Users | `GET /users/profile` · `PATCH /users/profile` · `GET /users/:id` · `POST/DELETE /users/:id/follow` · `GET /users/:id/followers?page=&limit=` · `GET /users/:id/following?page=&limit=` · `GET /users/blocked?page=&limit=` · `POST/DELETE /users/:id/block` |
 | Posts | `GET/POST /posts` · `GET /posts/feed` · `GET /posts/user/:userId` · `GET/PATCH/DELETE /posts/:id` · `POST /posts/:id/like` · `POST /posts/:id/comments` · `DELETE /posts/:id/comments/:commentId` |
 | Messages | `GET /messages/conversations` · `GET /messages/:userId?before=&limit=` · `PATCH /messages/:userId/read` |
 | Notifications | `GET /notifications` · `PATCH /notifications/read-all` · `PATCH /notifications/:id/read` · `DELETE /notifications/:id` |
+
+Profiles (`/users/profile`, `/users/:id`) return `{ _id, username, avatar, bio, followersCount, followingCount, postsCount, isMe, isFollowing, followsYou, createdAt, followers, following }`; `email`, `emailVerified` and `role` are added only on your own profile. `PATCH /users/profile` takes `username`, `email`, `bio` (max 160) and `avatar` (`""` removes it); changing the email resets `emailVerified` and sends a new verification email. Follow/unfollow return `data: { following, followersCount, followingCount }`. Follower, following and blocked lists are paged (default 20, max 50), newest first, as `[{ _id, username, avatar, bio, isFollowing, isMe }]` with `pagination`.
 
 Images are uploaded as multipart field `image` (JPEG/PNG, max 5MB) on `POST/PATCH /posts` and `PATCH /users/profile`, and served from `/uploads`.
 

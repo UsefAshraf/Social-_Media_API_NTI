@@ -129,44 +129,92 @@ paths['/auth/reset'] = {
 };
 
 // --- Users
+const profileResponse = (description) => ok(description, { type: 'object', properties: { success: { type: 'boolean' }, data: ref('Profile') } });
+const userPageParams = [
+  { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, default: 1 } },
+  { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } },
+];
+const userPage = ok('One page, newest first', {
+  type: 'object',
+  properties: {
+    success: { type: 'boolean' },
+    count: { type: 'integer', description: 'Same as pagination.total (kept for older clients)' },
+    data: { type: 'array', items: ref('UserListItem') },
+    pagination: ref('Pagination'),
+  },
+});
+const followResult = (description) =>
+  ok(description, {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean' },
+      message: { type: 'string' },
+      data: {
+        type: 'object',
+        properties: {
+          following: { type: 'boolean' },
+          followersCount: { type: 'integer', description: "The target's followers" },
+          followingCount: { type: 'integer', description: 'How many users you follow' },
+        },
+      },
+    },
+  });
+const blockResult = (description, blocked) =>
+  ok(description, {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean' },
+      message: { type: 'string' },
+      data: { type: 'object', properties: { blocked: { type: 'boolean', example: blocked } } },
+    },
+  });
+
+const profileFields = {
+  username: { type: 'string', minLength: 3, maxLength: 30 },
+  email: { type: 'string', format: 'email', description: 'Changing it sets emailVerified to false and sends a new verification email' },
+  bio: { type: 'string', maxLength: 160, description: 'Empty string clears it' },
+};
+
 paths['/users/profile'] = {
   get: {
     tags: ['Users'],
     summary: 'Current user',
     security: bearer,
-    responses: { 200: ok('Profile', { type: 'object', properties: { data: ref('User') } }), 401: errors[401] },
+    responses: { 200: profileResponse('Your profile, including email, emailVerified and role'), 401: errors[401] },
   },
   patch: {
     tags: ['Users'],
     summary: 'Update profile',
-    description: 'Send JSON, or multipart with an `image` file to upload an avatar (JPEG/PNG, max 5MB).',
+    description:
+      'Send JSON, or multipart with an `image` file to upload an avatar (JPEG/PNG, max 5MB). `avatar: ""` removes the avatar. A taken username or email returns 400 `Username already exists` / `Email already exists`.',
     security: bearer,
     requestBody: {
       content: {
         'application/json': {
           schema: {
             type: 'object',
-            properties: { username: { type: 'string' }, email: { type: 'string' }, avatar: { type: 'string', format: 'uri' } },
+            properties: { ...profileFields, avatar: { type: 'string', format: 'uri', description: 'Empty string removes the avatar' } },
           },
         },
         'multipart/form-data': {
           schema: {
             type: 'object',
-            properties: { username: { type: 'string' }, image: { type: 'string', format: 'binary' } },
+            properties: { ...profileFields, image: { type: 'string', format: 'binary' } },
           },
         },
       },
     },
-    responses: { 200: ok('Updated', { type: 'object', properties: { data: ref('User') } }), 400: errors[400] },
+    responses: { 200: profileResponse('Updated profile (own shape)'), 400: errors[400] },
   },
 };
 paths['/users/{id}'] = {
   get: {
     tags: ['Users'],
     summary: 'User by id',
+    description: 'email, emailVerified and role are included only for your own profile. 404 if either user blocked the other.',
     security: bearer,
     parameters: [idParam('id', 'User id')],
-    responses: { 200: ok('Profile', { type: 'object', properties: { data: ref('User') } }), 404: errors[404] },
+    responses: { 200: profileResponse('Profile'), 404: errors[404] },
   },
 };
 paths['/users/{id}/follow'] = {
@@ -175,27 +223,29 @@ paths['/users/{id}/follow'] = {
     summary: 'Follow a user',
     security: bearer,
     parameters: [idParam('id', 'User to follow')],
-    responses: { 200: ok('Following'), 400: ok('Cannot follow yourself', ref('Error')), 404: errors[404] },
+    responses: {
+      200: followResult('Following'),
+      400: ok('Cannot follow yourself', ref('Error')),
+      403: ok('Blocked', ref('Error')),
+      404: errors[404],
+    },
   },
   delete: {
     tags: ['Users'],
     summary: 'Unfollow a user',
     security: bearer,
     parameters: [idParam('id', 'User to unfollow')],
-    responses: { 200: ok('Unfollowed'), 404: errors[404] },
+    responses: { 200: followResult('Unfollowed'), 404: errors[404] },
   },
 };
 paths['/users/blocked'] = {
   get: {
     tags: ['Users'],
     summary: 'Users you have blocked',
+    description: 'Most recently blocked first. isFollowing is always false.',
     security: bearer,
-    responses: {
-      200: ok('List', {
-        type: 'object',
-        properties: { count: { type: 'integer' }, data: { type: 'array', items: ref('UserSummary') } },
-      }),
-    },
+    parameters: userPageParams,
+    responses: { 200: userPage },
   },
 };
 paths['/users/{id}/block'] = {
@@ -206,29 +256,24 @@ paths['/users/{id}/block'] = {
       'Removes follows both ways. Blocked users cannot see each other\'s profile or posts, follow, comment, like, message or notify each other.',
     security: bearer,
     parameters: [idParam('id', 'User to block')],
-    responses: { 200: ok('Blocked'), 400: ok('Cannot block yourself', ref('Error')), 404: errors[404] },
+    responses: { 200: blockResult('Blocked', true), 400: ok('Cannot block yourself', ref('Error')), 404: errors[404] },
   },
   delete: {
     tags: ['Users'],
     summary: 'Unblock a user',
     security: bearer,
     parameters: [idParam('id', 'User to unblock')],
-    responses: { 200: ok('Unblocked') },
+    responses: { 200: blockResult('Unblocked', false) },
   },
 };
 const connections = (summary) => ({
   get: {
     tags: ['Users'],
     summary,
+    description: 'Most recent first. Users hidden by blocks (either direction) are left out. 404 if the profile is blocked.',
     security: bearer,
-    parameters: [idParam('id', 'User id')],
-    responses: {
-      200: ok('List', {
-        type: 'object',
-        properties: { count: { type: 'integer' }, data: { type: 'array', items: ref('UserSummary') } },
-      }),
-      404: errors[404],
-    },
+    parameters: [idParam('id', 'User id'), ...userPageParams],
+    responses: { 200: userPage, 404: errors[404] },
   },
 });
 paths['/users/{id}/followers'] = connections('Followers of a user');
@@ -724,18 +769,36 @@ module.exports = {
         type: 'object',
         properties: { _id: { type: 'string' }, username: { type: 'string' }, avatar: { type: 'string' } },
       },
-      User: {
+      UserListItem: {
         type: 'object',
         properties: {
           _id: { type: 'string' },
           username: { type: 'string' },
-          email: { type: 'string', format: 'email' },
           avatar: { type: 'string' },
-          emailVerified: { type: 'boolean' },
-          followers: { type: 'array', items: { type: 'string' } },
-          following: { type: 'array', items: { type: 'string' } },
-          status: { type: 'string', enum: ['online', 'offline'] },
-          lastSeen: { type: 'string', format: 'date-time' },
+          bio: { type: 'string' },
+          isFollowing: { type: 'boolean', description: 'You follow this user' },
+          isMe: { type: 'boolean' },
+        },
+      },
+      Profile: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          username: { type: 'string' },
+          avatar: { type: 'string' },
+          bio: { type: 'string', maxLength: 160 },
+          followersCount: { type: 'integer' },
+          followingCount: { type: 'integer' },
+          postsCount: { type: 'integer' },
+          isMe: { type: 'boolean' },
+          isFollowing: { type: 'boolean', description: 'You follow them (false on your own profile)' },
+          followsYou: { type: 'boolean', description: 'They follow you (false on your own profile)' },
+          createdAt: { type: 'string', format: 'date-time' },
+          followers: { type: 'array', items: { type: 'string' }, description: 'Follower ids (kept for older clients)' },
+          following: { type: 'array', items: { type: 'string' }, description: 'Followed ids (kept for older clients)' },
+          email: { type: 'string', format: 'email', description: 'Own profile only' },
+          emailVerified: { type: 'boolean', description: 'Own profile only' },
+          role: { type: 'string', enum: ['user', 'admin'], description: 'Own profile only' },
         },
       },
       AuthResult: {
