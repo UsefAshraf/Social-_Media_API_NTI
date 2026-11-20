@@ -50,7 +50,14 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="profile"
-        options={{ title: 'Profile', tabBarIcon: ProfileIcon, tabBarButtonTestID: 'tab-profile' }}
+        options={{
+          title: 'Profile',
+          tabBarIcon: ProfileIcon,
+          tabBarButtonTestID: 'tab-profile',
+          headerRight: () => (
+            <HeaderButton title="Settings" icon="settings-outline" onPress={() => router.push('/settings')} testID="settings-button" />
+          ),
+        }}
       />
     </Tabs>
   );

@@ -24,15 +24,19 @@ A phone can't reach `localhost` on your computer — use your LAN IP (Android em
 src/
 ├── app/                  # Expo Router routes (no tests in here — every file is a route)
 │   ├── (auth)/           # login, register, forgot-password
-│   ├── (app)/(tabs)/     # Home feed, Discover (latest/trending), Profile (saved posts, log out)
-│   ├── (app)/            # post/[id], compose (modal, ?postId= edits), hashtag/[tag], users/[id]
+│   ├── (app)/(tabs)/     # Home feed, Discover (latest/trending), Profile (my posts / saved)
+│   ├── (app)/            # post/[id], compose (modal, ?postId= edits), hashtag/[tag],
+│   │                     # users/[id] (+ /followers, /following), edit-profile (modal),
+│   │                     # settings (account, blocked accounts, log out), blocked
 │   └── reset-password, verify-email   # deep-link targets, reachable signed in or out
 ├── api/                  # axios client, token storage, errors, auth + posts endpoints and mapping
 ├── auth/                 # zustand session store (useAuth) — import from '@/auth'
 ├── features/posts/       # TanStack Query hooks: lists, optimistic likes/bookmarks/comments, pickImage
-├── components/           # UI kit + PostCard, PostList (FlashList), RichText, CommentItem
+├── features/users/       # profiles, followers/following/blocked lists, optimistic follow, edit, block
+├── components/           # UI kit + PostCard, PostList (FlashList), RichText, CommentItem,
+│                         # ProfileHeader, FollowButton, UserList/UserRow
 ├── theme/                # light/dark tokens
-└── lib/                  # config (API_URL), queryClient, shared types (contracts.ts, posts.ts)
+└── lib/                  # config (API_URL), queryClient, shared types (contracts.ts, posts.ts, users.ts)
 ```
 
 On Windows, run Jest from PowerShell (or any shell whose working directory starts with an

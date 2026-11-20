@@ -23,7 +23,12 @@ export default function AppLayout() {
       <Stack.Screen name="post/[id]" options={{ title: 'Post' }} />
       <Stack.Screen name="compose" options={{ presentation: 'modal', title: 'New post' }} />
       <Stack.Screen name="hashtag/[tag]" options={{ title: 'Hashtag' }} />
-      <Stack.Screen name="users/[id]" options={{ title: 'Profile' }} />
+      <Stack.Screen name="users/[id]/index" options={{ title: 'Profile' }} />
+      <Stack.Screen name="users/[id]/followers" options={{ title: 'Followers' }} />
+      <Stack.Screen name="users/[id]/following" options={{ title: 'Following' }} />
+      <Stack.Screen name="edit-profile" options={{ presentation: 'modal', title: 'Edit profile' }} />
+      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+      <Stack.Screen name="blocked" options={{ title: 'Blocked accounts' }} />
     </Stack>
   );
 }
